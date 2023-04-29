@@ -1,4 +1,4 @@
-This directory contains the "archiva" versions of the package. For tests and developments only.
+This directory contains the "archiva" versions of PRIMA. For tests and developments only.
 
 N.B.: When profiling the solvers against the "archiva" version, e.g.,
 
