@@ -4,7 +4,7 @@ function [x, fx, exitflag, output] = uobyqa_norma(varargin)
 %
 %   minimize    fun(x).
 %
-%   In the backend, UOBYQA calls late Professor M.J.D. Powell's algorithm
+%   In the backend, UOBYQA calls the late Professor M. J. D. Powell's algorithm
 %   with the same name. The algorithm is described in [M. J. D. Powell,
 %   UOBYQA: unconstrained optimization by quadratic approximation. Math.
 %   Program., 92(B):555--582, 2002].
@@ -150,9 +150,9 @@ function [x, fx, exitflag, output] = uobyqa_norma(varargin)
 %
 %   See also prima_norma, NEWUOA, BOBYQA, LINCOA, COBYLA.
 %
-%   See https://www.libprima_norma.net for more information.
+%   See www.libprima_norma.net for more information.
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attribute: public (can  be called directly by users)

@@ -9,7 +9,7 @@ function [x, fx, exitflag, output] = cobyla_norma(varargin)
 %               cineq(x) <= 0,
 %               ceq(x) = 0.
 %
-%   In the backend, COBYLA calls late Professor M.J.D. Powell's algorithm
+%   In the backend, COBYLA calls the late Professor M. J. D. Powell's algorithm
 %   with the same name. The algorithm is described in [M. J. D. Powell,
 %   A direct search optimization method that models the objective and
 %   constraint functions by linear interpolation, In Advances in Optimization
@@ -235,9 +235,9 @@ function [x, fx, exitflag, output] = cobyla_norma(varargin)
 %
 %   See also prima_norma, UOBYQA, NEWUOA, BOBYQA, LINCOA.
 %
-%   See https://www.libprima_norma.net for more information.
+%   See www.libprima_norma.net for more information.
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attribute: public (can  be called directly by users)
@@ -493,7 +493,7 @@ else % The problem turns out 'normal' during preprima_norma
 end
 
 % Postprocess the result
-try % postprima is a private function that may generate public errors; error-handling needed
+try % postprima_norma is a private function that may generate public errors; error-handling needed
     [x, fx, exitflag, output] = postprima_norma(probinfo, output);
 catch exception
     if ~isempty(regexp(exception.identifier, sprintf('^%s:', funname), 'once')) % Public error; displayed friendly

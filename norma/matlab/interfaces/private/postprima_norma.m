@@ -8,7 +8,7 @@ function [x, fx, exitflag, output] = postprima_norma(probinfo, output)
 %               Department of Applied Mathematics,
 %               The Hong Kong Polytechnic University
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 %   ***********************************************************************
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +40,7 @@ obligatory_probinfo_fields = {'raw_data', 'refined_data', 'fixedx', 'fixedx_valu
     'trivial_lineq', 'trivial_leq', 'infeasible', 'scaled', 'scaling_factor', ...
     'shift', 'reduced', 'raw_type', 'raw_dim', 'refined_type', 'refined_dim', ...
     'feasibility_problem', 'user_options_fields', 'options', 'warnings', ...
-    'boundmax', 'funcmax', 'constrmax'};
+    'boundmax', 'funcmax', 'constrmax', 'x0_is_row'};
 obligatory_options_fields = {'classical', 'debug', 'chkfunval', 'precision'};
 
 % Who is calling this function? Is it a correct invoker?
@@ -214,6 +214,7 @@ end
 % fhist contains the function values of the last nhist iterates of the solver.
 if isfield(output, 'fhist')
     nhist = length(output.fhist);
+    % N.B.: It may happen that length(fhist) < min(nf,maxhist) due to memory limitation.
 else
     nhist = 0;
 end
@@ -589,15 +590,24 @@ if options.debug && ~options.classical
              '%s: UNEXPECTED ERROR: %s returns an fhist that does not match nf or fx.', invoker, solver);
     end
 
-    % Check whether constrviolation is correct
-    cobyla_norma_prec = 1e-3;
+    % 1. COBYLA cannot ensure fx == fun(x) or constr == con(x) due to rounding errors. Instead of
+    % checking the equality, we check whether the relative error is within cobyla_norma_prec.
+    % 2. There can also be a difference between constrviolation and cstrv due to rounding errors,
+    % especially if the problem is scaled.
+    % 3. The precision of the constraints seem to be lower for cobyla_norma and lincoa_norma due to the
+    % matrix-vector products.
+    %%%%%%%%%%%%%%%%%%%%%% Old values %%%%%%%%%%%%%%%%%%%%%%
+    %cobyla_norma_prec = 1e-4;
+    %lincoa_norma_prec = 1e-9;
+    %bobyqa_norma_prec = 1e-9;
+    %cobyla_norma_prec = 1e-8;
+    %bobyqa_norma_prec = 1e-10;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    cobyla_norma_prec = 1e-9;
     lincoa_norma_prec = 1e-9;
-    bobyqa_norma_prec = 1e-9;
-    % COBYLA cannot ensure fx == fun(x) or constr == con(x) due to rounding
-    % errors. Instead of checking the equality, we check whether the
-    % relative error is within cobyla_norma_prec.
-    % There can also be a difference between constrviolation and cstrv due
-    % to rounding errors, especially if the problem is scaled.
+    bobyqa_norma_prec = 1e-12;
+
+    % Check whether constrviolation is correct
     constrviolation = 0;
     if isfield(output, 'constrviolation')
         constrviolation = output.constrviolation;
@@ -609,22 +619,31 @@ if options.debug && ~options.classical
     end
     if strcmp(options.precision, 'double') && ((strcmp(solver, 'lincoa_norma') && ~constr_modified) || strcmp(solver, 'cobyla_norma'))
         Aineq = probinfo.raw_data.Aineq;
-        bineq = probinfo.raw_data.bineq;
+        bineq = probinfo.raw_data.bineq(:);  % The same as fmincon, we allow bineq to be a row vector
         Aeq = probinfo.raw_data.Aeq;
-        beq = probinfo.raw_data.beq;
+        beq = probinfo.raw_data.beq(:);  % The same as fmincon, we allow beq to be a row vector
         lb = probinfo.raw_data.lb(:);
         ub = probinfo.raw_data.ub(:);
         cstrv = get_cstrv(x, Aineq, bineq, Aeq, beq, lb, ub, nlcineq, nlceq);
-
-            if strcmp(solver, 'cobyla_norma')
-                cstrv(cstrv >= constrmax | isnan(cstrv)) = constrmax;
-                constrviolation(constrviolation >= constrmax | isnan(constrviolation)) = constrmax;
-            end
+        % If the solver is cobyla_norma, due to the moderated extreme barrier, any constraint
+        % violation that is NaN or above constrmax is replaced with constrmax.
+        % N.B.: In most cases, the replacement has been done for constrviolation by the solver.
+        % However, there are exceptions: If the problem is detected infeasible during the
+        % preprocessing, then the solvers will not be called, and constrviolation is the
+        % constraint violation at x0 calculated by get_constrv, which may be NaN or above
+        % constrmax. Similarly, if all the  variables are fixed by the bounds, then constrviolation
+        % is the constraint violation at the fixed x, calculated by get_constrv.
+        if strcmp(solver, 'cobyla_norma')
+            % Even though constrviolation and cstrv are numbers, we can still use logical indexing
+            % since all numbers are indeed matrices sin MATLAB.
+            constrviolation(constrviolation > constrmax | isnan(constrviolation)) = constrmax;
+            cstrv(cstrv > constrmax | isnan(cstrv)) = constrmax;
+        end
         if ~(isnan(cstrv) && isnan(constrviolation)) && ~(cstrv == inf && constrviolation == inf) && ...
                 ~(abs(constrviolation-cstrv) <= lincoa_norma_prec*max(1,abs(cstrv)) && strcmp(solver, 'lincoa_norma')) && ...
                 ~(abs(constrviolation-cstrv) <= cobyla_norma_prec*max(1,abs(cstrv)) && strcmp(solver, 'cobyla_norma'))
             % Public/unexpected error
-            error(sprintf('%s:InvalidChist', invoker), ...
+            error(sprintf('%s:InvalidConstrViolation', invoker), ...
               '%s: UNEXPECTED ERROR: %s returns a constrviolation that does not match x.', invoker, solver);
         end
 
@@ -759,10 +778,17 @@ if options.debug && ~options.classical
                         chistx(k) = get_cstrv(xhist(:, k), Aineq, bineq, Aeq, beq, lb, ub, nlcihistx(:, k), nlcehistx(:, k));
                     end
                 end
-                % Modify chistx according to the moderated extreme barrier if the solver is cobyla_norma.
+                % If the solver is cobyla_norma, due to the moderated extreme barrier, any constraint
+                % violation that is NaN or above constrmax is replaced with constrmax.
+                % N.B.: In most cases, the replacement has been done for chist by the solver.
+                % However, there are exceptions: If the problem is detected infeasible during the
+                % preprocessing, then the solvers will not be called, and chist contains only the
+                % constraint violation at x0 calculated by get_constrv, which may be NaN or above
+                % constrmax. Similarly, if all the  variables are fixed by the bounds, then chist
+                % contains only the constraint violation at the fixed x, calculated by get_constrv.
                 if strcmp(solver, 'cobyla_norma')
-                    chistx(chistx > constrmax | isnan(chistx)) = constrmax;
                     chist(chist > constrmax | isnan(chist)) = constrmax;
+                    chistx(chistx > constrmax | isnan(chistx)) = constrmax;
                 end
                 if any(~(isnan(chist) & isnan(chistx)) & ~((chist == chistx) | ...
                         (abs(chistx-chist) <= lincoa_norma_prec*max(1, abs(chist)) & strcmp(solver, 'lincoa_norma')) | ...
@@ -774,6 +800,17 @@ if options.debug && ~options.classical
             end
         end
     end % chkfunval ends
+end
+
+
+% If x0 is a row, then reshape x to a row.
+% N.B.:
+% 1. We do this at the very end, because the verification above assumes that x is a column.
+% 2. We choose not the reshape output.xhist (if it exists) so that its shape is consistent with that
+% of fhist, chist, nlchist, etc. More precisely, each row of the history corresponds to a point
+% visited by the algorithm.
+if probinfo.x0_is_row
+    x = x';
 end
 
 % postprima_norma ends

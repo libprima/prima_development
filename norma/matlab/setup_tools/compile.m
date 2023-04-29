@@ -52,7 +52,8 @@ precisions = all_precisions();
 variants = all_variants();
 
 % `options.verbose` indicates whether to do the compilation in the verbose mode.
-if isfield(options, 'verbose') && islogicalscalar(options.verbose) && options.verbose
+verbose = (isfield(options, 'verbose') && islogicalscalar(options.verbose) && options.verbose);
+if verbose
     verbose_option = '-v';
 else
     verbose_option = '-silent';
@@ -85,7 +86,11 @@ for idbg = 1 : length(debug_flags)
         % We can NOT write the loop below as `mex(mex_options{:}, '-c', common_files{:});`
         % Because such a command may not respect the order of common_files{:}, which is critical here.
         for icf = 1 : length(common_files)
-            mex(mex_options{:}, '-c', common_files{icf});
+            if verbose
+                mex(mex_options{:}, '-c', common_files{icf});
+            else
+                evalc('mex(mex_options{:}, ''-c'', common_files{icf})');  % Suppress the output.
+            end
             % The module/object files are dumped to the current directory, namely `work_dir`.
         end
     end
@@ -120,12 +125,20 @@ for isol = 1 : length(solvers)
                 % We can NOT write the loop below as `mex(mex_options{:}, '-c', common_files{:});`
                 % Because such a command may not respect the order of common_files{:}, which is critical here.
                 for isf = 1 : length(src_files)
-                    mex(mex_options{:}, '-c', src_files{isf});
+                    if verbose
+                        mex(mex_options{:}, '-c', src_files{isf});
+                    else
+                        evalc('mex(mex_options{:}, ''-c'', src_files{isf})');  % Suppress the output.
+                    end
                     % The module/object files are dumped to the current directory, namely `work_dir`.
                 end
                 obj_files = [list_obj_files(common_dir), list_obj_files(work_dir)];
                 mexname = get_mexname(solvers{isol}, precisions{iprc}, debug_flags{idbg}, variants{ivar});
-                mex(mex_options{:}, obj_files{:}, gateway, '-output', mexname, '-outdir', mexdir);
+                if verbose
+                    mex(mex_options{:}, obj_files{:}, gateway, '-output', mexname, '-outdir', mexdir);
+                else
+                    evalc('mex(mex_options{:}, obj_files{:}, gateway, ''-output'', mexname, ''-outdir'', mexdir)'); % Suppress the output.
+                end
             end
         end
     end
@@ -165,23 +178,23 @@ function prepare_header(header_file, precision, debug_flag)
 
 switch precision
 case {'s', 'single'}
-    rep_str(header_file, '#define __REAL_PRECISION__ 64', '#define __REAL_PRECISION__ 32');
-    rep_str(header_file, '#define __REAL_PRECISION__ 128', '#define __REAL_PRECISION__ 32');
-    rep_str(header_file, '#define __QP_AVAILABLE__ 1', '#define __QP_AVAILABLE__ 0');
+    rep_str(header_file, '#define REAL_PRECISION_ 64', '#define REAL_PRECISION_ 32');
+    rep_str(header_file, '#define REAL_PRECISION_ 128', '#define REAL_PRECISION_ 32');
+    rep_str(header_file, '#define QP_AVAILABLE_ 1', '#define QP_AVAILABLE_ 0');
 case {'q', 'quadruple'}
-    rep_str(header_file, '#define __REAL_PRECISION__ 32', '#define __REAL_PRECISION__ 128');
-    rep_str(header_file, '#define __REAL_PRECISION__ 64', '#define __REAL_PRECISION__ 128');
-    rep_str(header_file, '#define __QP_AVAILABLE__ 0', '#define __QP_AVAILABLE__ 1');
+    rep_str(header_file, '#define REAL_PRECISION_ 32', '#define REAL_PRECISION_ 128');
+    rep_str(header_file, '#define REAL_PRECISION_ 64', '#define REAL_PRECISION_ 128');
+    rep_str(header_file, '#define QP_AVAILABLE_ 0', '#define QP_AVAILABLE_ 1');
 otherwise
-    rep_str(header_file, '#define __REAL_PRECISION__ 32', '#define __REAL_PRECISION__ 64');
-    rep_str(header_file, '#define __REAL_PRECISION__ 128', '#define __REAL_PRECISION__ 64');
-    rep_str(header_file, '#define __QP_AVAILABLE__ 1', '#define __QP_AVAILABLE__ 0');
+    rep_str(header_file, '#define REAL_PRECISION_ 32', '#define REAL_PRECISION_ 64');
+    rep_str(header_file, '#define REAL_PRECISION_ 128', '#define REAL_PRECISION_ 64');
+    rep_str(header_file, '#define QP_AVAILABLE_ 1', '#define QP_AVAILABLE_ 0');
 end
 
 if debug_flag
-    rep_str(header_file, '#define __DEBUGGING__ 0', '#define __DEBUGGING__ 1');
+    rep_str(header_file, '#define DEBUGGING_ 0', '#define DEBUGGING_ 1');
 else
-    rep_str(header_file, '#define __DEBUGGING__ 1', '#define __DEBUGGING__ 0');
+    rep_str(header_file, '#define DEBUGGING_ 1', '#define DEBUGGING_ 0');
 end
 
 % PREPARE_HEADER ends

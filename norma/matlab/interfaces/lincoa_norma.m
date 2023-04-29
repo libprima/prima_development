@@ -7,7 +7,7 @@ function [x, fx, exitflag, output] = lincoa_norma(varargin)
 %               Aeq * x = beq,
 %               lb <= x <= ub.
 %
-%   In the backend, LINCOA calls late Professor M.J.D. Powell's algorithm
+%   In the backend, LINCOA calls the late Professor M. J. D. Powell's algorithm
 %   with the same name.
 %
 %   The interface of LINCOA is similar to that of function FMINCON included
@@ -199,9 +199,9 @@ function [x, fx, exitflag, output] = lincoa_norma(varargin)
 %
 %   See also prima_norma, UOBYQA, NEWUOA, BOBYQA, COBYLA.
 %
-%   See https://www.libprima_norma.net for more information.
+%   See www.libprima_norma.net for more information.
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attribute: public (can  be called directly by users)

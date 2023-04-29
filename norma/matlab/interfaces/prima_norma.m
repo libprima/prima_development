@@ -9,7 +9,7 @@ function [x, fx, exitflag, output] = prima_norma(varargin)
 %               cineq(x) <= 0,
 %               ceq(x) = 0.
 %
-%   In the backend, PRIMA calls late Professor M.J.D. Powell's algorithms
+%   In the backend, PRIMA calls the late Professor M. J. D. Powell's algorithms
 %   UOBYQA, NEWUOA, BOBYQA, LINCOA, and COBYLA.
 %
 %   The interface of PRIMA is the same as that of function FMINCON included
@@ -258,9 +258,9 @@ function [x, fx, exitflag, output] = prima_norma(varargin)
 %
 %   See also UOBYQA, NEWUOA, BOBYQA, LINCOA, COBYLA.
 %
-%   See https://www.libprima_norma.net for more information.
+%   See www.libprima_norma.net for more information.
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attribute: public (can  be called directly by users)
@@ -316,7 +316,7 @@ function [x, fx, exitflag, output] = prima_norma(varargin)
 %
 % 2. Warnings that may be raised by prima_norma
 % 2.1. All the  warnings are considered to be public, i.e., they are
-% desigened to be shown to the users.
+% designed to be shown to the users.
 % 2.2. Warnings are displayed without the call stack trace.
 %
 % 3. probinfo

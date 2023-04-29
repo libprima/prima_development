@@ -7,7 +7,7 @@ function [fun, x0, Aineq, bineq, Aeq, beq, lb, ub, nonlcon, options, probinfo] =
 %               Department of Applied Mathematics,
 %               The Hong Kong Polytechnic University
 %
-%   Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+%   Dedicated to the late Professor M. J. D. Powell FRS (1936--2015).
 %   ***********************************************************************
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -98,6 +98,7 @@ end
 % 24. boundmax: the large allowed absolute value of bound constraints
 % 25. funcmax: the largest allowed value of the objective function
 % 26. constrmax: the largest allowed absolute value of the constraints
+% 27. x0_is_row: whether x0 is a row
 probinfo = struct();
 
 % Save the raw data (date before validation/preprocessing) in probinfo.
@@ -116,7 +117,7 @@ probinfo.raw_data = struct('objective', fun, 'x0', x0, 'Aineq', Aineq, 'bineq', 
 
 % Decide the precision ('single', 'double', or 'quadruple') of the real calculation within the
 % Fortran solvers. This is needed ONLY by `boundmax`, `funcmax`, and `constrmax` defined below by
-% calling `getmax`. These three numbers will be used in `pre_x0`, `pre_fun`, and `pre_con`
+% calling `getmax`. These three numbers will be used in `pre_x0`, `pre_fun`, and `pre_nonlcon`
 % respectively in the sequel. Note the following.
 % 1. `precision` takes effect only if Fortran solvers are called (i.e., when options.fortran = true).
 % 2. `precision` is passed only to `getmax`, which defines huge values (e.g., `boundmax`, `funcmax`).
@@ -130,12 +131,10 @@ probinfo.boundmax = getmax('bound', precision);
 probinfo.funcmax = getmax('function', precision);
 probinfo.constrmax = getmax('constraint', precision);
 
-% Validate and preprocess fun
-[fun, probinfo.feasibility_problem, warnings] = pre_fun(invoker, fun, probinfo.funcmax, warnings);
-
 % Validate and preprocess x0
-[x0, warnings] = pre_x0(invoker, x0, precision, warnings);
+[x0, warnings, x0_is_row] = pre_x0(invoker, x0, precision, warnings);
 lenx0 = length(x0); % Within this file, for clarity, we denote length(x0) by lenx0 instead of n
+probinfo.x0_is_row = x0_is_row;
 
 % Validate and preprocess the bound constraints
 % In addition, get the indices of infeasible bounds and 'fixed variables'
@@ -153,12 +152,23 @@ fixedx_value_save = fixedx_value; % Values of fixed variables
 
 % Problem type before reduction
 % This has to be done after preprocessing the bound constraints (because
-% min(ub) and % max(lb) are evaluated) and before preprocessing the
+% min(ub) and max(lb) are evaluated) and before preprocessing the
 % linear/nonlinear constraints (because these constraints will be
 % reduced during the preprocessing). Note that Aineq, Aeq, and nonlcon will
 % not be "evaluated" in problem_type, so there is no worry about the
 % validity of them.
 probinfo.raw_type = problem_type(Aineq, Aeq, lb, ub, nonlcon);
+
+% Raise a warning if x0 is a row and the problem has linear constraints (before the reduction),
+% as the formulation of linear constraints (Aineq*x <= bineq, Aeq*x = beq) assumes that the decision
+% variable x is a column. If x0 is a row, pre_x0 transposes it, and pre_fun, pre_nonlcon redefines
+% fun and nonlcon, so that the solvers only need to deal with x as a column.
+if x0_is_row && ~(isempty(Aineq) && isempty(Aeq))
+    wid = sprintf('%s:X0IsRow', invoker);
+    wmsg = sprintf('%s: x0 is a row, but a column is expected; it is transposed.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
 
 % Validate and preprocess the linear constraints
 % 1. The constraints will be reduced if some but not all variables are
@@ -167,27 +177,37 @@ probinfo.raw_type = problem_type(Aineq, Aeq, lb, ub, nonlcon);
 % 2. The 'trivial constraints' will be excluded (if any).
 % 3. In addition, get the indices of infeasible and trivial constraints (if any)
 %    and save the information in probinfo.
+% 4. fixedx_value is revised to the corresponding values of x0 if infeasible linear constraints are detected
 [Aineq, bineq, Aeq, beq, infeasible_lineq, trivial_lineq, infeasible_leq, trivial_leq, fixedx_value, warnings] = pre_lcon(invoker, x0, Aineq, bineq, Aeq, beq, lenx0, fixedx, fixedx_value, warnings);
-probinfo.fixedx_value = fixedx_value; % Value of the fixed x entries; it is revised to the corresponding values of x0 in pre_lcon if infeasibility is detected
+probinfo.fixedx_value = fixedx_value; % Possibly revised value of the fixed x entries
 probinfo.infeasible_lineq = infeasible_lineq; % A vector of true/false
 probinfo.trivial_lineq = trivial_lineq; % A vector of true/false
 probinfo.infeasible_leq = infeasible_leq; % A vector of true/false
 probinfo.trivial_leq = trivial_leq; % A vector of true/false
 
-% Validate and preprocess the nonlinear constraints
-% This should be done before evaluating probinfo.constrv_x0 or probinfo.constrv_fixedx.
-% The constraints will be reduced if some but not all variables are fixed by the bound
-% constraints. See pre_lcon for why we do not reduce the problem when all variables
-% are fixed.
-nonlcon = pre_nonlcon(invoker, nonlcon, fixedx, fixedx_value, probinfo.constrmax);
+% Validate and preprocess fun
+% 1. The objective function will be reduced if some but not all variables are
+%    fixed by the bound constraints. See pre_lcon for why we do not reduce the
+%    problem when all variables are fixed.
+% 2. This should be done after preprocessing the bound and linear constraints, which defines
+%    and may revise fixedx_value.
+[fun, probinfo.feasibility_problem, warnings] = pre_fun(invoker, fun, fixedx, fixedx_value, probinfo.funcmax, x0_is_row, warnings);
 
-% Reduce fun, x0, lb, and ub if some but not all variables are fixed by
+% Validate and preprocess the nonlinear constraints
+% 1. The constraints will be reduced if some but not all variables are fixed by the bound
+%    constraints. See pre_lcon for why we do not reduce the problem when all variables
+%    are fixed.
+% 2. This should be done after preprocessing the bound and linear constraints, which defines
+%    and may revise fixedx_value.
+% 3. This should be done before evaluating probinfo.constrv_x0 or probinfo.constrv_fixedx.
+nonlcon = pre_nonlcon(invoker, nonlcon, fixedx, fixedx_value, probinfo.constrmax, x0_is_row);
+
+% Reduce x0, lb, and ub if some but not all variables are fixed by
 % the bound constraints. See pre_lcon for why we do not reduce the
 % problem when all variables are fixed.
 probinfo.raw_dim = lenx0; % Problem dimension before reduction
 if any(fixedx) && any(~fixedx)
     freex = ~fixedx; % A vector of true/false indicating whether the variable is free or not
-    fun = @(freex_value) fun(fullx(freex_value, fixedx_value, freex, fixedx)); % Objective function after reduction
     x0 = x0(freex); % x0 after reduction
     lenx0 = length(x0);
     lb = lb(freex); % lb after reduction
@@ -197,28 +217,24 @@ probinfo.refined_type = problem_type(Aineq, Aeq, lb, ub, nonlcon); % Problem typ
 probinfo.refined_dim = length(x0); % Problem dimension after reduction
 probinfo.reduced = any(fixedx) && any(~fixedx); % Whether the problem has been reduced
 
-% After the preprocessing, the problem may turn out infeasible, or x may
-% turn out fixed by the bounds
-if ~any([probinfo.infeasible_lineq; probinfo.infeasible_leq; probinfo.infeasible_bound])
-    probinfo.infeasible = false;
-else % The problem turns out infeasible
-    [probinfo.constrv_x0, probinfo.nlcineq_x0, probinfo.nlceq_x0] = constrv(x0, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
+% After the preprocessing, the problem may turn out infeasible
+probinfo.infeasible = any([probinfo.infeasible_lineq; probinfo.infeasible_leq; probinfo.infeasible_bound]);
+if probinfo.infeasible  % The problem turns out infeasible
+    [probinfo.constrv_x0, probinfo.nlcineq_x0, probinfo.nlceq_x0] = get_constrv(x0, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
     % The constraint violation calculated by constrv does not include
     % the violation of x0 for the bounds corresponding to fixedx; the
     % corresponding values of x0 are in fixedx_value, while the values
     % of the bounds (lb and ub are the same up to eps) are in
     % fixedx_value_save. Thus the violation is abs(fixedx_value-fixedx_value_save).
-    %probinfo.constrv_x0 = max([probinfo.constrv_x0; abs(fixedx_value - fixedx_value_save)]);
     rbounds = abs(fixedx_value - fixedx_value_save);
-    rbounds(fixedx_value == fixedx_value_save) = 0;
-    probinfo.constrv_x0 = max([probinfo.constrv_x0; abs(rbounds)], [], 'includenan');
-    probinfo.infeasible = true;
+    rbounds = rbounds(fixedx_value ~= fixedx_value_save);  % Prevent NaN in case both are +/-Inf
+    probinfo.constrv_x0 = max([probinfo.constrv_x0; rbounds], [], 'includenan');
 end
-if any(~fixedx)
-    probinfo.nofreex = false;
-else % x turns out fixed by the bound constraints
-    [probinfo.constrv_fixedx, probinfo.nlcineq_fixedx, probinfo.nlceq_fixedx] = constrv(probinfo.fixedx_value, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
-    probinfo.nofreex = true;
+
+% After the preprocessing, x may turn out fixed by the bounds
+probinfo.nofreex = all(fixedx);
+if probinfo.nofreex  % x turns out fixed by the bound constraints
+    [probinfo.constrv_fixedx, probinfo.nlcineq_fixedx, probinfo.nlceq_fixedx] = get_constrv(probinfo.fixedx_value, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
 end
 
 % Can the invoker handle the given problem?
@@ -334,7 +350,7 @@ if probinfo.feasibility_problem && ~strcmp(probinfo.refined_type, 'nonlinearly-c
 % current x0, which has been revised by project. The constraint violation
 % at x0 is needed to set the output. Note that there is no nonlinear
 % constraint in this case.
-    probinfo.constrv_x0 = constrv(x0, Aineq, bineq, Aeq, beq, lb, ub, []);
+    probinfo.constrv_x0 = get_constrv(x0, Aineq, bineq, Aeq, beq, lb, ub, []);
 end
 
 probinfo.warnings = warnings; % Record the warnings in probinfo
@@ -424,7 +440,7 @@ if ~isempty(unknown_fields)
     warnings = [warnings, wmsg];
 end
 
-% Read the fields of problem. They will be validated in function preprima
+% Read the fields of problem. They will be validated in function preprima_norma
 Aineq = [];
 bineq = [];
 Aeq = [];
@@ -465,8 +481,278 @@ if isfield(problem,'solver')
 end
 return
 
+%%%%%%%%%%%%%%%%%%%%%%%% Function for x0 preprocessing %%%%%%%%%%%%%%%%%
+function [x0, warnings, x0_is_row] = pre_x0(invoker, x0, precision, warnings)
+[isrv, lenx0]  = isrealvector(x0);
+if ~(isrv && (lenx0 > 0))
+    % Public/normal error
+    error(sprintf('%s:InvalidX0', invoker), '%s: X0 should be a real vector/scalar.', invoker);
+end
+if (lenx0 > maxint())
+    % Public/normal error
+    error(sprintf('%s:ProblemTooLarge', invoker), '%s: The problem is too large; at most %d variables are allowed.', invoker, maxint());
+end
+x0_is_row = (lenx0 >= 2) && isrealrow(x0);
+x0 = double(x0(:));  % Transpose x0 if it is a row; fun and nonlcon will be redefined accordingly.
+abnormal_x0 = isnan(x0) | (abs(x0) >= inf);
+if any(abnormal_x0)
+    x0(isnan(x0)) = 0;
+    maxfloat = getmax('real', precision);
+    x0(isinf(x0) & x0 > 0) = maxfloat;
+    x0(isinf(x0) & x0 < 0) = -maxfloat;
+    wid = sprintf('%s:AbnormalX0', invoker);
+    wmsg = sprintf('%s: X0 contains NaN or infinite values; NaN is replaced by 0 and Inf by %g.', invoker, maxfloat);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+return
+
+%%%%%%%%%%%%%%%%% Function for bound constraint preprocessing %%%%%%%%%%
+function [lb, ub, infeasible_bound, fixedx, fixedx_value, warnings] = pre_bcon(invoker, lb, ub, lenx0, warnings)
+% Lower bounds (lb)
+[isrvlb, lenlb] = isrealvector(lb);
+if ~(isrvlb && (lenlb == lenx0 || lenlb == 0))
+    % Public/normal error
+    error(sprintf('%s:InvalidBound', invoker), ...
+    '%s: lb should be a real vector and length(lb) = length(x0) unless lb = [].', invoker);
+end
+if (lenlb == 0)
+    lb = -inf(lenx0,1); % After pre_bcon, length(lb) = length(x0)
+end
+lb = double(lb(:));
+if any(isnan(lb))
+    wid = sprintf('%s:NaNInLB', invoker);
+    wmsg = sprintf('%s: LB contains NaN; the problem is hence infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+% Upper bounds (ub)
+[isrvub, lenub] = isrealvector(ub);
+if ~(isrvub && (lenub == lenx0 || lenub == 0))
+    % Public/normal error
+    error(sprintf('%s:InvalidBound', invoker), ...
+    '%s: ub should be a real vector and length(ub) = length(x0) unless ub = [].', invoker);
+end
+if (lenub == 0)
+    ub = inf(lenx0,1); % After pre_bcon, length(ub) = length(x0)
+end
+ub = double(ub(:));
+if any(isnan(ub))
+    wid = sprintf('%s:NaNInUB', invoker);
+    wmsg = sprintf('%s: UB contains NaN; the problem is hence infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+infeasible_bound = ~(lb <= ub); % A vector of true/false; true if lb or ub is NaN or lb > ub
+if any(infeasible_bound)
+    fixedx = false(lenx0, 1);
+    fixedx_value = [];
+else
+    fixedx = (ub <= lb + 2*eps);  % Avoid ub - lb in case ub = lb = +/-Inf. Use <= instead of <.
+    fixedx_value = (lb(fixedx)+ub(fixedx))/2;
+end
+return
+
+%%%%%%%%%%%%%%%%% Function for linear constraint preprocessing %%%%%%%%%%
+function [Aineq, bineq, Aeq, beq, infeasible_lineq, trivial_lineq, infeasible_leq, trivial_leq, fixedx_value, warnings] = pre_lcon(invoker, x0, Aineq, bineq, Aeq, beq, lenx0, fixedx, fixedx_value, warnings)
+
+freex = ~fixedx; % A vector of true/false indicating whether the variable is free or not
+
+% Preprocess linear inequalities: Aineq*x <= bineq.
+
+% Check whether Aineq and bineq are real matrices and vectors of proper size, respectively.
+[isrm, mA, nA] = isrealmatrix(Aineq);
+[isrv, lenb] = isrealvector(bineq);  % The same as fmincon, we allow bineq to be a row
+% No matter whether x0 or bineq is a row or column, we always require that size(Aineq) is
+% [length(bineq), length(x0)] unless Aineq = bineq = []. This is consistent with fmincon.
+if ~(isrm && isrv && (mA == lenb) && (nA == lenx0 || nA == 0))
+    % Public/normal error
+    error(sprintf('%s:InvalidLinIneq', invoker), ...
+    '%s: Aineq should be a real matrix, bineq should be a real column, and size(Aineq) = [length(bineq), length(X0)] unless Aineq = bineq = [].', invoker);
+end
+if (lenb >= 2) && isrealrow(bineq)
+    wid = sprintf('%s:BineqIsRow', invoker);
+    wmsg = sprintf('%s: bineq is a row, but a column is expected; it is transposed.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+bineq = double(bineq(:));
+Aineq = double(Aineq);
+
+% Warn about inequality constraints containing NaN.
+nan_ineq = any(isnan(Aineq), 2) | isnan(bineq);
+if any(nan_ineq)
+    wid = sprintf('%s:NaNInequality', invoker);
+    wmsg = sprintf('%s: Aineq or bineq contains NaN; the problem is hence infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+% Warn about inequality constraints containing Inf.
+inf_ineq = any(abs(Aineq) >= inf, 2) | (bineq <= -inf);
+if any(inf_ineq)
+    wid = sprintf('%s:InfInequality', invoker);
+    wmsg = sprintf('%s: Aineq contains infinite values or bineq contains -Inf; the problem is considered infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+% Reduce the inequality constraints if some but not all variables are fixed.
+% 1. This has to be done before detecting the "zero constraints" (i.e., constraints with zero
+%    gradients), because nonzero constraints may become zero after reduction.
+% 2. We should NOT reduce the problem if all variables are fixed. Otherwise, Aineq would be [], and
+%    then bineq will be set to [] in the end. In this way, we lose completely the information in
+%    these constraints. Consequently, we cannot evaluate the constraint violation correctly when needed.
+lineq_reduced = false; % Whether linear inequality constraints are reduced
+if ~isempty(Aineq) && any(fixedx) && any(~fixedx)
+    Aineq_fixed = Aineq(:, fixedx); % Aineq_fixed and bineq_save will be used when revising fixedx_value
+    bineq_save = bineq;
+    bineq = bineq - Aineq_fixed * fixedx_value;
+    Aineq = Aineq(:, freex);
+    lineq_reduced = true;
+end
+
+% Define infeasible_lineq.
+if isempty(Aineq)
+    infeasible_lineq = [];
+else
+    Aineq_rownorm1 = sum(abs(Aineq), 2);
+    zero_ineq = (Aineq_rownorm1 == 0);
+    Aineq_rownorm1(zero_ineq) = 1;
+    infeasible_zero_ineq = (bineq < 0 & zero_ineq);
+    % bineq has been revised during the reduction; we regard the constraint as infeasible if Inf or
+    % NaN arises after the reduction.
+    nan_ineq = nan_ineq | isnan(bineq);
+    inf_ineq = inf_ineq | (abs(bineq) >= inf);
+    infeasible_lineq = (bineq ./ Aineq_rownorm1 <= -inf) | infeasible_zero_ineq | nan_ineq | inf_ineq; % A vector of true/false
+end
+
+% Preprocess linear equalities: Aeq*x == beq
+
+% Check whether Aeq and beq are real matrices and vectors of proper size, respectively.
+[isrm, mA, nA] = isrealmatrix(Aeq);
+[isrv, lenb] = isrealvector(beq);  % The same as fmincon, we allow beq to be a row
+% No matter whether x0 or beq is a row or column, we always require that size(Aeq) is
+% [length(beq), length(x0)] unless Aeq = beq = []. This is consistent with fmincon.
+if ~(isrm && isrv && (mA == lenb) && (nA == lenx0 || nA == 0))
+    % Public/normal error
+    error(sprintf('%s:InvalidLinEq', invoker), ...
+    '%s: Aeq should be a real matrix, beq should be a real column, and size(Aeq) = [length(beq), length(X0)] unless Aeq = beq = [].', invoker);
+end
+if (lenb >= 2) && isrealrow(beq)
+    wid = sprintf('%s:BeqIsRow', invoker);
+    wmsg = sprintf('%s: beq is a row, but a column is expected; it is transposed.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+beq = double(beq(:));
+Aeq = double(Aeq);
+
+% Warn about equality constraints containing NaN.
+nan_eq = any(isnan(Aeq), 2) | isnan(beq);
+if any(nan_eq)
+    wid = sprintf('%s:NaNEquality', invoker);
+    wmsg = sprintf('%s: Aeq or beq contains NaN; The problem is hence infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+% Warn about equality constraints containing Inf.
+inf_eq = any(abs(Aeq) >= inf, 2) | (abs(beq) >= inf);
+if any(inf_eq)
+    wid = sprintf('%s:InfEquality', invoker);
+    wmsg = sprintf('%s: Aeq or beq contains infinite values; the problem is considered infeasible.', invoker);
+    warning(wid, '%s', wmsg);
+    warnings = [warnings, wmsg];
+end
+
+% Reduce the equality constraints if some but not all variables are fixed.
+% 1. This has to be done before detecting the "zero constraints" (i.e., constraints with zero
+%    gradients), because nonzero constraints may become zero after reduction.
+% 2. We should NOT reduce the problem if all variables are fixed. Otherwise, Aeq would be [], and
+%    then beq will be set to [] in the end. In this way, we lose completely the information in
+%    these constraints. Consequently, we cannot evaluate the constraint violation correctly when needed.
+leq_reduced = false; % Whether linear equality constraints are reduced
+if ~isempty(Aeq) && any(fixedx) && any(~fixedx)
+    Aeq_fixed = Aeq(:, fixedx); % Aeq_fixed and beq_save may be used when revising fixedx_value
+    beq_save = beq;
+    beq = beq - Aeq_fixed * fixedx_value;
+    Aeq = Aeq(:, freex);
+    leq_reduced = true;
+end
+
+% Define infeasible_leq.
+if isempty(Aeq)
+    infeasible_leq = [];
+else
+    Aeq_rownorm1 = sum(abs(Aeq), 2);
+    zero_eq = (Aeq_rownorm1 == 0);
+    Aeq_rownorm1(zero_eq) = 1;
+    infeasible_zero_eq = (beq ~= 0 & zero_eq);
+    % beq has been revised during the reduction; we regard the constraint as infeasible if Inf or
+    % NaN arises after the reduction.
+    nan_eq = nan_eq | isnan(beq);
+    inf_eq = inf_eq | (abs(beq) >= inf);
+    infeasible_leq = (abs(beq ./ Aeq_rownorm1) >= inf) | infeasible_zero_eq | nan_eq | inf_eq;  % A vector of true/false
+end
+
+% Define trivial_lineq and trivial_leq; remove the trivial constraints.
+infeasible = (any(infeasible_lineq) || any(infeasible_leq));
+if infeasible
+    trivial_lineq = false(size(bineq));
+    trivial_leq = false(size(beq));
+else
+    if isempty(Aineq)
+        trivial_lineq = [];
+    else
+        trivial_lineq = ((bineq ./ Aineq_rownorm1 == inf) | (bineq >= inf) | (bineq >= 0 & zero_ineq));
+        Aineq = Aineq(~trivial_lineq, :); % Remove the trivial linear inequalities
+        bineq = bineq(~trivial_lineq);
+    end
+    if isempty(Aeq)
+        trivial_leq = [];
+    else
+        trivial_leq = (beq == 0 & zero_eq);
+        Aeq = Aeq(~trivial_leq, :); % Remove trivial linear equalities
+        beq = beq(~trivial_leq);
+    end
+end
+
+% If infeasibility is detected, then we will return x0 without further calculations. Thus we need to
+% revise fixedx_value to x0(fixedx), and redefine bineq/beq so that they are reduced with
+% x(fixedx) = x0(fixedx) (otherwise, the constraint violation cannot be correctly calculated later).
+reduced = (lineq_reduced || leq_reduced);
+if infeasible && reduced
+    fixedx_value = x0(fixedx);
+    if lineq_reduced
+        bineq = bineq_save - Aineq_fixed * fixedx_value;
+    end
+    if leq_reduced
+        beq = beq_save - Aeq_fixed * fixedx_value;
+    end
+end
+
+% We uniformly use [] to represent empty numerical matrices/vectors;
+% its size is 0x0. Changing this may cause matrix dimension inconsistency.
+if isempty(Aeq)
+    Aeq = [];
+    beq = [];
+end
+if isempty(Aineq)
+    Aineq = [];
+    bineq = [];
+end
+
+if (max([length(beq), length(bineq)]) > maxint())
+    % Public/normal error
+    error(sprintf('%s:ProblemTooLarge', invoker), '%s: The problem is too large; at most %d constraints are allowed.', invoker, maxint());
+end
+return
+
 %%%%%%%%%%%%%%%%%%%%%%%% Function for fun preprocessing %%%%%%%%%%%%%%%%%
-function [fun, feasibility_problem, warnings] = pre_fun(invoker, fun, funcmax, warnings)
+function [fun, feasibility_problem, warnings] = pre_fun(invoker, fun, fixedx, fixedx_value, funcmax, x0_is_row, warnings)
 if ~(isempty(fun) || ischarstr(fun) || isa(fun, 'function_handle'))
     % Public/normal error
     error(sprintf('%s:InvalidFun', invoker), ...
@@ -504,270 +790,22 @@ if ~exist('OCTAVE_VERSION', 'builtin')
         '%s: FUN has no output; it should return the objective function value.', invoker);
     end
 end
-fun = @(x) evalobj(invoker, fun, x, funcmax);  % See evalobj.m
-return
-
-%%%%%%%%%%%%%%%%%%%%%%%% Function for x0 preprocessing %%%%%%%%%%%%%%%%%
-function [x0, warnings] = pre_x0(invoker, x0, precision, warnings)
-[isrv, lenx0]  = isrealvector(x0);
-if ~(isrv && (lenx0 > 0))
-    % Public/normal error
-    error(sprintf('%s:InvalidX0', invoker), '%s: X0 should be a real vector/scalar.', invoker);
-end
-if (lenx0 > maxint())
-    % Public/normal error
-    error(sprintf('%s:ProblemTooLarge', invoker), '%s: The problem is too large; at most %d variables are allowed.', invoker, maxint());
-end
-x0 = double(x0(:));
-abnormal_x0 = isnan(x0) | (abs(x0) >= inf);
-if any(abnormal_x0)
-    x0(isnan(x0)) = 0;
-    maxfloat = getmax('real', precision);
-    x0(isinf(x0) & x0 > 0) = maxfloat;
-    x0(isinf(x0) & x0 < 0) = -maxfloat;
-    wid = sprintf('%s:AbnormalX0', invoker);
-    wmsg = sprintf('%s: X0 contains NaN or infinite values; NaN is replaced by 0 and Inf by %g.', invoker, maxfloat);
-    warning(wid, '%s', wmsg);
-    warnings = [warnings, wmsg];
-end
-return
-
-%%%%%%%%%%%%%%%%% Function for bound constraint preprocessing %%%%%%%%%%
-function [lb, ub, infeasible_bound, fixedx, fixedx_value, warnings] = pre_bcon(invoker, lb, ub, lenx0, warnings)
-% Lower bounds (lb)
-[isrvlb, lenlb] = isrealvector(lb);
-if ~(isrvlb && (lenlb == lenx0 || lenlb == 0))
-    % Public/normal error
-    error(sprintf('%s:InvalidBound', invoker), ...
-    '%s: lb should be a real vector and length(lb) = length(x0) unless lb = [].', invoker);
-end
-if (lenlb == 0)
-    lb = -inf(lenx0,1); % After pre_bcon, length(lb) = length(x0)
-end
-lb = double(lb(:));
-%if any(isnan(lb))
-%    lb(isnan(lb)) = -inf; % Replace the NaN in lb by -inf
-%    wid = sprintf('%s:NaNInLB', invoker);
-%    wmsg = sprintf('%s: LB contains NaN; it is replaced by -inf.', invoker);
-%    warning(wid, '%s', wmsg);
-%    warnings = [warnings, wmsg];
-%end
-
-% Upper bounds (ub)
-[isrvub, lenub] = isrealvector(ub);
-if ~(isrvub && (lenub == lenx0 || lenub == 0))
-    % Public/normal error
-    error(sprintf('%s:InvalidBound', invoker), ...
-    '%s: ub should be a real vector and length(ub) = length(x0) unless ub = [].', invoker);
-end
-if (lenub == 0)
-    ub = inf(lenx0,1); % After pre_bcon, length(ub) = length(x0)
-end
-ub = double(ub(:));
-%if any(isnan(ub))
-%    ub(isnan(ub)) = inf; % Replace the NaN in ub by inf
-%    wid = sprintf('%s:NaNInUB', invoker);
-%    wmsg = sprintf('%s: UB contains NaN; it is replaced by inf.', invoker);
-%    warning(wid, '%s', wmsg);
-%    warnings = [warnings, wmsg];
-%end
-
-%infeasible_bound = (lb > ub); % A vector of true/false
-infeasible_bound = (lb > ub | isnan(lb) | isnan(ub)); % A vector of true/false
-if any(infeasible_bound)
-    fixedx = false(lenx0, 1);
-    fixedx_value = [];
+% During the calculation, x is always a column vector. We assume that fun expects a row vector if
+% x0 is a row.
+if x0_is_row
+    fun = @(x) evalobj(invoker, fun, x', funcmax);  % See evalobj.m for evalobj
 else
-    %fixedx = (abs(lb - ub) < 2*eps);
-    fixedx = (ub <= lb + 2*eps);
-    fixedx_value = (lb(fixedx)+ub(fixedx))/2;
+    fun = @(x) evalobj(invoker, fun, x, funcmax);  % See evalobj.m for evalobj
 end
-return
-
-%%%%%%%%%%%%%%%%% Function for linear constraint preprocessing %%%%%%%%%%
-function [Aineq, bineq, Aeq, beq, infeasible_lineq, trivial_lineq, infeasible_leq, trivial_leq, fixedx_value, warnings] = pre_lcon(invoker, x0, Aineq, bineq, Aeq, beq, lenx0, fixedx, fixedx_value, warnings)
-freex = ~fixedx; % A vector of true/false indicating whether the variable is free or not
-
-% inequalities: Aineq*x <= bineq
-[isrm, mA, nA] = isrealmatrix(Aineq);
-[isrc, lenb] = isrealcolumn(bineq);
-if ~(isrm && isrc && (mA == lenb) && (nA == lenx0 || nA == 0))
-    % Public/normal error
-    error(sprintf('%s:InvalidLinIneq', invoker), ...
-    '%s: Aineq should be a real matrix, bineq should be a real column, and size(Aineq) = [length(bineq), length(X0)] unless Aineq = bineq = [].', invoker);
-end
-nan_ineq = isnan(bineq) | any(isnan(Aineq), 2);
-inf_ineq = bineq <= -inf | any(isinf(Aineq), 2);
-%if any(isnan(bineq))
-%    bineq(isnan(bineq)) = inf; % Replace the NaN in bineq by inf, namely to remove this constraint
-%    wid = sprintf('%s:NaNInbineq', invoker);
-%    wmsg = sprintf('%s: bineq contains NaN; it is replaced by inf.', invoker);
-%    warning(wid, '%s', wmsg);
-%    warnings = [warnings, wmsg];
-%end
-lineq_reduced = false; % Whether linear inequality constraints are reduced
-Aineq_save = Aineq;
-bineq_save = bineq;
-if ~isempty(Aineq) && any(fixedx) && any(~fixedx)
-    % Reduce the linear inequality constraints if some but not all variables
-    % are fixed by the bound constraints. This has to be done before
-    % detecting the "zero constraints" (i.e., constraints with zero
-    % gradients), because nonzero constraints may become zero after reduction.
-    Aineq_fixed = Aineq(:, fixedx); % Aineq_fixed and bineq_save will be used when revising fixedx_value
-    bineq = bineq - Aineq_fixed * fixedx_value;
-    Aineq = Aineq(:, freex);
-    lineq_reduced = true;
-    % Note that we should NOT reduced the problem if all variables are
-    % fixed. Otherwise, Aineq would be [], and then bineq will be set to
-    % [] in the end. In this way, we lose completely the information in
-    % linear constraints. Consequently, we cannot evaluate the constraint
-    % violation correctly when needed.
-end
-if isempty(Aineq)
-    infeasible_lineq = [];
-    trivial_lineq = [];
-else
-    Aineq = double(Aineq);
-    bineq = double(bineq);
-    rownorm1 = sum(abs(Aineq), 2);
-    zero_ineq = (rownorm1 == 0);
-    infeasible_zero_ineq = (rownorm1 == 0) & (bineq < 0);
-    trivial_zero_ineq = (rownorm1 == 0) & (bineq >= 0);
-    rownorm1(zero_ineq) = 1;
-%    infeasible_lineq = (bineq./rownorm1 == -inf) | infeasible_zero_ineq | isnan(rownorm1); % A vector of true/false
-%    infeasible_lineq = (bineq./rownorm1 == -inf) | infeasible_zero_ineq | ((isnan(rownorm1) | isnan(bineq)) & ~nan_ineq); % A vector of true/false
-    %infeasible_lineq = (bineq./rownorm1 == -inf) | infeasible_zero_ineq | ((isnan(rownorm1) | isnan(bineq))); % A vector of true/false
-    infeasible_lineq = (bineq./rownorm1 == -inf) | infeasible_zero_ineq | ((isnan(rownorm1) | isnan(bineq))) | isinf(bineq) | (any(abs(Aineq)>= inf, 2)); % A vector of true/false
-    infeasible_lineq = infeasible_lineq | nan_ineq | inf_ineq;
-
-    %trivial_lineq = (bineq./rownorm1 == inf) | trivial_zero_ineq;
-    %trivial_lineq = (bineq./rownorm1 == inf) | trivial_zero_ineq ; %| nan_ineq;
-    trivial_lineq = (bineq./rownorm1 == inf) | trivial_zero_ineq | bineq >= inf; %| nan_ineq;
-    trivial_lineq = trivial_lineq & ~infeasible_lineq;
-    Aineq = Aineq(~trivial_lineq, :); % Remove the trivial linear inequalities
-    bineq = bineq(~trivial_lineq);
-end
-
-% equalities: Aeq*x == beq
-[isrm, mA, nA] = isrealmatrix(Aeq);
-[isrc, lenb] = isrealcolumn(beq);
-if ~(isrm && isrc && (mA == lenb) && (nA == lenx0 || nA == 0))
-    % Public/normal error
-    error(sprintf('%s:InvalidLinEq', invoker), ...
-    '%s: Aeq should be a real matrix, beq should be a real column, and size(Aeq) = [length(beq), length(X0)] unless Aeq = beq = [].', invoker);
-end
-% Are there equality constraints whose both sides contain NaN?
-% This should be detected before reducing the constraints;
-% when reducing the constraints, the NaN on the left-hand side will lead
-% to NaN on the right-hand side.
-if isempty(Aeq)
-    nan_eq = [];
-else
-    nan_eq = isnan(sum(abs(Aeq), 2)) & isnan(beq); % In MATLAB 2014a, this may lead to inconsistent sizes when Aeq is empty; in MATLAB 2018a, it is fine
-end
-nan_eq = isnan(beq) | any(isnan(Aeq), 2);
-inf_eq = isinf(beq) | any(isinf(Aeq), 2);
-if any(nan_eq)
-    wid = sprintf('%s:NaNEquality', invoker);
-    wmsg = sprintf('%s: there are equality constraints whose both sides contain NaN; such constraints are removed.', invoker);
-    warning(wid, '%s', wmsg);
-    warnings = [warnings, wmsg];
-end
-leq_reduced = false; % Whether linear equality constraints are reduced
-Aeq_save = Aeq;
-beq_save = beq;
-if ~isempty(Aeq) && any(fixedx) && any(~fixedx)
-    % Reduce the linear equality constraints if some but not all variables
-    % are fixed by the bound constraints. This has to be done before
-    % detecting the "zero constraints" (i.e., constraints with zero
-    % gradients), because nonzero constraints may become zero after reduction.
-    Aeq_fixed = Aeq(:, fixedx); % Aeq_fixed and beq_save may be used when revising fixedx_value
-    beq = beq - Aeq_fixed * fixedx_value;
-    Aeq = Aeq(:, freex);
-    leq_reduced = true;
-    % Note that we should NOT reduced the problem if all variables are
-    % fixed. Otherwise, Aeq would be [], and then beq will be set to
-    % [] in the end. In this way, we lose completely the information in
-    % linear constraints. Consequently, we cannot evaluate the constraint
-    % violation correctly when needed.
-end
-if isempty(Aeq)
-    infeasible_leq = [];
-    trivial_leq = [];
-else
-    Aeq = double(Aeq);
-    beq = double(beq);
-    rownorm1 = sum(abs(Aeq), 2);
-    zero_eq = (rownorm1 == 0);
-    infeasible_zero_eq = (rownorm1 == 0) & (beq ~= 0);
-    trivial_zero_eq = (rownorm1 == 0) & (beq == 0);
-    rownorm1(zero_eq) = 1;
-%    infeasible_leq = (abs(beq./rownorm1) == inf) | infeasible_zero_eq | ((isnan(rownorm1) | isnan(beq)) & ~nan_eq); % A vector of true/false
-    %infeasible_leq = (abs(beq./rownorm1) == inf) | infeasible_zero_eq | ((isnan(rownorm1) | isnan(beq)) ); % A vector of true/false
-    infeasible_leq = (abs(beq./rownorm1) == inf) | infeasible_zero_eq | ((isnan(rownorm1) | isnan(beq)) ) | abs(beq) >= inf | any(abs(Aeq) >= inf, 2); % A vector of true/false
-    infeasible_leq = infeasible_leq | nan_eq | inf_eq;
-
-    %trivial_leq = trivial_zero_eq ;%| nan_eq;
-    trivial_leq = trivial_zero_eq & ~infeasible_leq;%| nan_eq;
-    Aeq = Aeq(~trivial_leq, :); % Remove trivial linear equalities
-    beq = beq(~trivial_leq);
-end
-
-% In case of infeasibility, revise fixedx_value so that x0 will be returned
-if (any(infeasible_lineq) || any(infeasible_leq)) && any(fixedx) && any(~fixedx)
-    fixedx_value = x0(fixedx);
-    % We have to revise bineq and beq so that the constraint violation can
-    % be correctly calculated.
-    %if lineq_reduced
-    %    bineq = bineq_save - Aineq_fixed * fixedx_value;
-    %    %bineq = bineq(~trivial_lineq);
-    %    Aineq = Aineq_save(:, freex);
-    %end
-    %if leq_reduced
-    %    beq = beq_save - Aeq_fixed * fixedx_value;
-    %    %beq = beq(~trivial_leq);
-    %    Aeq = Aeq_save(:, freex);
-    %end
-end
-
-if any(infeasible_lineq) || any(infeasible_leq)
-    trivial_lineq = false(size(bineq));
-    trivial_leq = false(size(beq));
-    if leq_reduced
-        Aeq = Aeq_save(:, freex);
-        beq = beq_save - Aeq_fixed * fixedx_value;
-    else
-        Aeq = Aeq_save;
-        beq = beq_save;
-    end
-    if lineq_reduced
-        Aineq = Aineq_save(:, freex);
-        bineq = bineq_save - Aineq_fixed * fixedx_value;
-    else
-        Aineq = Aineq_save;
-        bineq = bineq_save;
-    end
-end
-
-% We uniformly use [] to represent empty numerical matrices/vectors;
-% its size is 0x0. Changing this may cause matrix dimension inconsistency.
-if isempty(Aeq)
-    Aeq = [];
-    beq = [];
-end
-if isempty(Aineq)
-    Aineq = [];
-    bineq = [];
-end
-
-if (max([length(beq), length(bineq)]) > maxint())
-    % Public/normal error
-    error(sprintf('%s:ProblemTooLarge', invoker), '%s: The problem is too large; at most %d constraints are allowed.', invoker, maxint());
+% Reduce fun if some but not all variables are fixed by the bounds.
+% Note that we do not reduce the problem when all variables are fixed. See pre_lcon for the reason.
+if any(fixedx) && any(~fixedx)
+    fun = @(freex_value) fun(fullx(freex_value, fixedx_value, fixedx));
 end
 return
 
 %%%%%%%%%%%%%%%%% Function for nonlinear constraint preprocessing %%%%%%%%%%
-function nonlcon = pre_nonlcon(invoker, nonlcon, fixedx, fixedx_value, constrmax)
+function nonlcon = pre_nonlcon(invoker, nonlcon, fixedx, fixedx_value, constrmax, x0_is_row)
 if ~(isempty(nonlcon) || isa(nonlcon, 'function_handle') || ischarstr(nonlcon))
     % Public/normal error
     error(sprintf('%s:InvalidCon', invoker), ...
@@ -800,21 +838,25 @@ else
             '%s: nonlcon has too few outputs; it should return [cineq, ceq], the constraints being cineq(x) <= 0, ceq(x) = 0.', invoker);
         end
     end
-    if any(fixedx) && any(~fixedx)
-        % Reduce the nonlinear constraints if some but not all variables are
-        % fixed by the bound constraints. Note that we do not reduce the
-        % problem when all variables are fixed. See pre_lcon for the reason.
-        freex = ~fixedx; % A vector of true/false indicating whether the variable is free or not
-        nonlcon = @(freex_value) nonlcon(fullx(freex_value, fixedx_value, freex, fixedx));
+    % During the calculation, x is always a column vector. We assume that nonlcon expects a row
+    % vector if x0 is a row.
+    if x0_is_row
+        nonlcon = @(x) evalcon(invoker, nonlcon, x', constrmax);  % See evalcon.m for evalcon
+    else
+        nonlcon = @(x) evalcon(invoker, nonlcon, x, constrmax);  % See evalcon.m for evalcon
     end
-    nonlcon = @(x) evalcon(invoker, nonlcon, x, constrmax);  % See evalcon.m
+    % Reduce the nonlcon if some but not all variables are fixed by the bounds
+    % Note that we do not reduce the problem when all variables are fixed. See pre_lcon for the reason.
+    if any(fixedx) && any(~fixedx)
+        nonlcon = @(freex_value) nonlcon(fullx(freex_value, fixedx_value, fixedx));
+    end
 end
 return
 
 %%%%%%%%%%%%%%%%% Function fullx used when reducing the problem %%%%%%%%
-function x = fullx(freex_value, fixedx_value, freex, fixedx)
+function x = fullx(freex_value, fixedx_value, fixedx)
 x = NaN(length(freex_value)+length(fixedx_value), 1);
-x(freex) = freex_value;
+x(~fixedx) = freex_value;
 x(fixedx) = fixedx_value;
 return
 
@@ -1045,7 +1087,7 @@ end
 % 2. The user does not specify options.npt
 % 1.1. The solver is yet to decide (solver = ''): we set options.npt to NaN.
 % 1.2. The user has chosen a valid solver: we set options.npt to the default
-% value accoring to the solver.
+% value according to the solver.
 % After this process, options.npt is either a positive integer (compatible
 % with options.solver if it is specified by the user) or NaN (only if the
 % user does not specify a valid solver while options.npt is either unspecified
@@ -1263,7 +1305,7 @@ end
 options.classical = logical(options.classical);
 if options.classical
     wid = sprintf('%s:Classical', invoker);
-    wmsg = sprintf('%s: in classical mode, which is recommended only for research purpose; set options.classical to false to disable classical mode.', invoker);
+    wmsg = sprintf('%s: in classical mode, which may CRASH your computer; it is discouraged except for research purposes; set options.classical to false to disable classical mode.', invoker);
     warning(wid, '%s', wmsg);
     warnings = [warnings, wmsg];
 end
@@ -1388,6 +1430,14 @@ if isfield(options, 'iprint')
         wid = sprintf('%s:IprintContradictFortran', invoker);
         wmsg = sprintf('%s: iprint = %d but fortran = true; iprint is reset to %d and the output will be recorded in a .txt file.', invoker, options.iprint, -options.iprint);
         options.iprint = -options.iprint;
+        warning(wid, '%s', wmsg);
+        warnings = [warnings, wmsg];
+        validated = true;
+    elseif options.iprint ~= 0 && options.classical
+        % In classical mode, a nonzero iprint = 0 is not supported.
+        wid = sprintf('%s:IprintContradictClassical', invoker);
+        wmsg = sprintf('%s: iprint = %d but classical = true; iprint is reset to 0 as other values are not supported.', invoker, options.iprint);
+        options.iprint = 0;
         warning(wid, '%s', wmsg);
         warnings = [warnings, wmsg];
         validated = true;
@@ -1672,7 +1722,7 @@ scaling_factor = (ub - lb)/2;
 shift = (lb + ub)/2;
 
 fun = @(x) fun(scaling_factor.*x+shift);
-x0 = (x0-shift)./scaling_factor;
+x0 = (x0-shift) ./ scaling_factor;
 if ~isempty(Aineq)
 % Aineq*x_before_scaling <= bineq
 % <==> Aineq*(scaling_factor.*x_after_scaling+shift) <= bineq
@@ -1687,11 +1737,11 @@ end
 if ~isempty(lb)
 % lb < x_before_scaling < ub
 % <==> lb < scaling_factor.*x_after_scaling + shift < ub
-% <==> (lb-shift)./scaling_factor < x_after_scaling < (ub-shift)./scaling_factor
-    lb = (lb-shift)./scaling_factor;
+% <==> (lb-shift) ./ scaling_factor < x_after_scaling < (ub-shift) ./ scaling_factor
+    lb = (lb-shift) ./ scaling_factor;
 end
 if ~isempty(ub)
-    ub = (ub-shift)./scaling_factor;
+    ub = (ub-shift) ./ scaling_factor;
 end
 if ~isempty(nonlcon)
     nonlcon = @(x) nonlcon(scaling_factor.*x+shift);
@@ -1707,7 +1757,7 @@ end
 %end
 
 substantially_scaled = false;
-%if (max([scaling_factor; 1./scaling_factor]) > substantially_scaled_threshold)
+%if (max([scaling_factor; 1 ./ scaling_factor]) > substantially_scaled_threshold)
 if max([1; scaling_factor])/min([1; scaling_factor]) > substantially_scaled_threshold
     substantially_scaled = true;
 end
@@ -1887,24 +1937,13 @@ match = match || strcmp(solver, 'prima_norma');  % prima_norma matches all types
 return
 
 %%%%%%%%%%%%%%% Function for calculating constraint violation %%%%%%%%%%
-function [constrviolation, nlcineq, nlceq] = constrv(x, Aineq, bineq, Aeq, beq, lb, ub, nonlcon)
-% CONSTRV calculates the absolute constraint violation at x.
-rineq = [];
-req = [];
+function [constrviolation, nlcineq, nlceq] = get_constrv(x, Aineq, bineq, Aeq, beq, lb, ub, nonlcon)
+%GET_CONSTRV calculates the absolute constraint violation at x.
 nlcineq = [];
 nlceq = [];
-if ~isempty(Aineq)
-    rineq = Aineq*x-bineq;
-end
-if ~isempty(Aeq)
-    req = Aeq*x-beq;
-end
 if ~isempty(nonlcon)
     [nlcineq, nlceq] = nonlcon(x);
 end
-%constrviolation = max([0; rineq; abs(req); lb-x; x-ub; nlcineq; abs(nlceq)], [], 'includenan');
-% max(X, [], 'includenan') will return NaN if X contains NaN and the
-% maximum of X otherwise.
 constrviolation = get_cstrv(x, Aineq, bineq, Aeq, beq, lb, ub, nlcineq, nlceq);
 return
 
