@@ -1,9 +1,10 @@
 #!/bin/bash
-# This script archives the current version of the project, creating archiva and norma.
-
-# The "norma: directory
-# version, which will contain a version will be used as the reference version in the development of
-# the new version.
+# This script archives the current version of the project, creating norma and archiva.
+#
+# norma: a directory containing a version that will be used as the reference version in the
+# development of the new version.
+# archiva: a directory containing a collection of archived versions of the project, each of which
+# is a snapshot of the project together with the corresponding "norma" version.
 
 # The directory where this scrip resides
 THIS_DIR="$(realpath "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
