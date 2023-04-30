@@ -37,6 +37,7 @@ printf "\nArchiving the current version in %s ...\n" "$ARCHIVA_TODAY"
 EXCLUDE_LIST=$(mktemp -q)
 cat > "$EXCLUDE_LIST" <<EOF
 matlab/tests/testdata
+fortran/notes
 EOF
 # Copy by rsync.
 mkdir -p "$ARCHIVA_TODAY"
