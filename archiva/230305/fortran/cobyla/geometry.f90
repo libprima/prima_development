@@ -92,7 +92,7 @@ adequate_geo = all(vsig >= factor_alpha * delta) .and. all(veta <= factor_beta *
 end function assess_geo
 
 
-function setdrop_tr(ximproved, d, sim, simi) result(jdrop)
+function setdrop_tr(ximproved, d, delta, rho, sim, simi) result(jdrop)
 !--------------------------------------------------------------------------------------------------!
 ! This subroutine finds (the index) of a current interpolation point to be replaced with the
 ! trust-region trial point. See (19)--(22) of the COBYLA paper.
@@ -114,6 +114,8 @@ implicit none
 ! Inputs
 logical, intent(in) :: ximproved
 real(RP), intent(in) :: d(:)    ! D(N)
+real(RP), intent(in) :: delta
+real(RP), intent(in) :: rho
 real(RP), intent(in) :: sim(:, :)   ! SIM(N, N+1)
 real(RP), intent(in) :: simi(:, :)  ! SIMI(N, N)
 
@@ -224,7 +226,7 @@ weight = distsq
 ! !weight = max(ONE, 25.0_RP * distsq / delta**2)
 ! !weight = max(ONE, TEN * distsq / delta**2)
 ! !weight = max(ONE, 1.0E2_RP * distsq / delta**2)
-! !weight = max(ONE, distsq / max(rho, TENTH * delta)**2)
+weight = max(ONE, distsq / max(rho, TENTH * delta)**2)
 ! !weight = max(ONE, distsq / rho**2)
 
 ! If 1 <= J <= N, SIMID(J) is the value of the J-th Lagrange function at D; the value of the

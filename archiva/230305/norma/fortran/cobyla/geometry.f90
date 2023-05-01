@@ -92,7 +92,7 @@ adequate_geo = all(vsig >= factor_alpha * delta) .and. all(veta <= factor_beta *
 end function assess_geo
 
 
-function setdrop_tr(ximproved, d, delta, factor_alpha, factor_delta, sim, simi) result(jdrop)
+function setdrop_tr(ximproved, d, delta, rho, factor_alpha, factor_delta, sim, simi) result(jdrop)
 !--------------------------------------------------------------------------------------------------!
 ! This subroutine finds (the index) of a current interpolation point to be replaced by the
 ! trust-region trial point. See (19)--(22) of the COBYLA paper.
@@ -116,7 +116,7 @@ implicit none
 ! Inputs
 logical, intent(in) :: ximproved
 real(RP), intent(in) :: d(:)    ! D(N)
-real(RP), intent(in) :: delta
+real(RP), intent(in) :: delta, rho
 real(RP), intent(in) :: factor_alpha
 real(RP), intent(in) :: factor_delta
 real(RP), intent(in) :: sim(:, :)   ! SIM(N, N+1)
@@ -134,6 +134,7 @@ real(RP) :: sigbar(size(sim, 1))
 real(RP) :: simid(size(sim, 1))
 real(RP) :: veta(size(sim, 1))
 real(RP) :: vsig(size(sim, 1))
+real(RP) :: weight(size(sim, 1) + 1)
 real(RP), parameter :: itol = TENTH
 
 ! Sizes
@@ -197,13 +198,22 @@ end if
 if (ximproved) then
     veta = (sum((sim(:, 1:n) - spread(d, dim=2, ncopies=n))**2, dim=1))
     !!MATLAB: veta = sqrt(sum((sim(:, 1:n) - d).^2));  % d should be a column! Implicit expansion
-    score = [veta, sum(d**2)] * abs([simid, 1.0_RP - sum(simid)])
+    !score = [veta, sum(d**2)] * abs([simid, 1.0_RP - sum(simid)])
+    weight = max(ONE, [veta, sum(d**2)] / max(rho, TENTH * delta)**2)
 else
     veta = (sum(sim(:, 1:n)**2, dim=1))
-    score = [veta, 0.0_RP] * abs([simid, 1.0_RP - sum(simid)])
+    !score = [veta, 0.0_RP] * abs([simid, 1.0_RP - sum(simid)])
+    weight = max(ONE, [veta, 0.0_RP] / max(rho, TENTH * delta)**2)
 end if
 
-if (any(veta > 0)) then
+    score = weight * abs([simid, 1.0_RP - sum(simid)])
+
+if (.not. ximproved) then
+    score(n + 1) = -ONE
+end if
+
+!if (any(veta > 0)) then
+if (any(score > 0)) then
     jdrop = maxloc(score, dim=1, mask=.not. is_nan(score))
 elseif (ximproved) then
     jdrop = maxloc(veta, dim=1)

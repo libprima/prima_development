@@ -390,7 +390,8 @@ do tr = 1, maxtr
             ! is no good point to replace, and X will not be included into the simplex; in this case,
             ! the geometry of the simplex likely needs improvement, which will be handled below.
             ! N.B.: COBYLA never sets JDROP_TR = N + 1.
-            jdrop_tr = setdrop_tr(ximproved, d, delta, factor_alpha, factor_delta, sim, simi)
+            !jdrop_tr = setdrop_tr(ximproved, d, delta, factor_alpha, factor_delta, sim, simi)
+            jdrop_tr = setdrop_tr(ximproved, d, delta,rho, factor_alpha, factor_delta, sim, simi)
 
             ! Update SIM, SIMI, FVAL, CONMAT, and CVAL so that SIM(:, JDROP_TR) is replaced by D.
             ! UPDATEXFC does nothing if JDROP_TR == 0, as the algorithm decides to discard X.
