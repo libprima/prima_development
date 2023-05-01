@@ -1,4 +1,5 @@
-This directory contains the "norma" and "archiva" versions of PRIMA. For tests and developments only.
+This is the arhiva of PRIMA (http://www.libprima.net). It contains the "norma" and "archiva" versions
+of PRIMA. For tests and developments only.
 
 norma: a directory containing a version that will be used as the reference version in the
 development of the new version. "norma" is the Latin word for "standard".
