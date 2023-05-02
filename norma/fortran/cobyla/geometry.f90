@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Tuesday, February 14, 2023 AM12:14:43
+! Last Modified: Tuesday, May 02, 2023 PM03:24:53
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -240,8 +240,8 @@ if (.not. ximproved) then
     score(n + 1) = -ONE
 end if
 
-!if (any(score > 0)) then
-if (any(score > 1) .or. (ximproved .and. any(score > 0))) then
+if (any(score > 0)) then
+!if (any(score > 1) .or. (ximproved .and. any(score > 0))) then
     jdrop = int(maxloc(score, mask=(.not. is_nan(score)), dim=1), kind(jdrop))
     !!MATLAB: [~, jdrop] = max(score, [], 'omitnan');
 elseif (ximproved) then
