@@ -779,7 +779,7 @@ case 'lincoa'
         }];
 case 'cobyla'
     blacklist = [blacklist, {'HS80'}];  % QRADD_RDIAG: Assertion failed: C^T*Q(:, N) == Rdiag(N).
-    blacklist = [blacklist, {'EXTRASIM', 'POLAK6', 'SPIRAL', 'POLAK2'}]; % Assertion failed: B = A^{-1}
+    %blacklist = [blacklist, {'EXTRASIM', 'POLAK6', 'SPIRAL', 'POLAK2'}]; % Assertion failed: B = A^{-1}
     %blacklist = [blacklist, {'LAUNCH', 'MINMAXRB', 'MAKELA1', 'HS75', 'GAUSS3','HATFLDG'}]; % Classical cobyla encounters SEGFAULT
     blacklist = [blacklist, {'DEGENLPA'}]; % Classical cobyla encounters infinite cycling
     blacklist = [blacklist, { ...
