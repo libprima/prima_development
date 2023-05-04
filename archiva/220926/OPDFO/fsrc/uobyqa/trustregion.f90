@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, May 04, 2023 PM11:09:46
+! Last Modified: Thursday, May 04, 2023 PM11:45:23
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -513,7 +513,7 @@ do while (.true.)
 
     ! Pick the value of PAR for the next iteration.
     ! 20230504: If the next line is `IF (PARU == ZERO)`, a ``Heisenbug'' will occur during the
-    ! following verification, provided that the Gfortran version is 13: without printing PARU,
+    ! following verification, provided that the Gfortran version is 12: without printing PARU,
     ! the verification fails; when PARU is printed, it passes. Maybe this indicates a bigger bug:
     ! uninitialized values or illegal access to memory, but we did not find it.
     ! ```
