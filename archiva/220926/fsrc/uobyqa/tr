@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, May 04, 2023 PM11:09:46
+! Last Modified: Wednesday, September 21, 2022 AM10:17:52
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -53,7 +53,6 @@ use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, TWO, HALF, DEBUGGING
 use, non_intrinsic :: debug_mod, only : assert, wassert
 use, non_intrinsic :: infnan_mod, only : is_finite, is_nan
 use, non_intrinsic :: linalg_mod, only : issymmetric, inprod, hessenberg, eigmin, trueloc
-use, non_intrinsic :: ieee_4dev_mod, only : ieeenan
 
 implicit none
 
@@ -106,12 +105,6 @@ logical :: d_initialized  ! TO BE REMOVED.
 !     We take the view that any D is acceptable if it has the properties
 !
 !             ||D|| <= DELTA  and  ACTRED <= (1-TOL)*MAXRED.
-!
-!!!!!!!!!!!!!!!!!!!!
-dsq = ieeenan()
-phiu = ieeenan()
-phil = ieeenan()
-!!!!!!!!!!!!!!!!!!!!
 
 ! Sizes.
 n = int(size(g), kind(n))
@@ -512,16 +505,7 @@ do while (.true.)
     end if
 
     ! Pick the value of PAR for the next iteration.
-    ! 20230504: If the next line is `IF (PARU == ZERO)`, a ``Heisenbug'' will occur during the
-    ! following verification, provided that the Gfortran version is 13: without printing PARU,
-    ! the verification fails; when PARU is printed, it passes. Maybe this indicates a bigger bug:
-    ! uninitialized values or illegal access to memory, but we did not find it.
-    ! ```
-    ! .development/archiva/220926/matlab/tests/
-    ! opt.nr=1; opt.no_classical=true; opt.yw=231814; verify('seq', 'uobyqa', 'MISRA1BLS', opt)
-    ! ```
-    !if (paru == ZERO) then
-    if (paru <= ZERO) then
+    if (paru == ZERO) then
         par = TWO * parlest + gnorm / delta
     else
         par = HALF * (parl + paru)

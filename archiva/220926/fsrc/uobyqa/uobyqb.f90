@@ -14,7 +14,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, September 26, 2022 PM11:04:30
+! Last Modified: Thursday, May 04, 2023 PM02:26:30
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -216,6 +216,7 @@ do while (.true.)
         end if
         call evaluate(calfun, x, f)
         nf = nf + 1
+        !write (16, *) 'tr', nf, f, x
         call savehist(nf, x, xhist, f, fhist)
 
         if (is_nan(f) .or. is_posinf(f)) then
@@ -426,6 +427,7 @@ do while (.true.)
             end if
             call evaluate(calfun, x, f)
             nf = nf + 1
+            !write (16, *) 'geo', nf, f, x
             call savehist(nf, x, xhist, f, fhist)
 
             if (is_nan(f) .or. is_posinf(f)) then
@@ -487,9 +489,11 @@ do while (.true.)
             end if
             cycle
         end if
+        !write (16, *) 492, reduce_rho
         if (.not. reduce_rho) cycle
     end if
 
+    !write (16, *) 'nf, rho', nf, rho, rhoend
     if (rho <= rhoend) then
         info = SMALL_TR_RADIUS
         exit
@@ -538,7 +542,7 @@ call rangehist(nf, xhist, fhist)
 
 ! Postconditions
 
-!close (16)
+close (16)
 
 
 end subroutine uobyqb
