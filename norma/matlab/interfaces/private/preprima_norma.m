@@ -1403,7 +1403,7 @@ validated = false;
 if isfield(options, 'iprint')
     if ~isintegerscalar(options.iprint) || abs(options.iprint) > 3
         wid = sprintf('%s:InvalidIprint', invoker);
-        wmsg = sprintf('%s: invalid iprint; it should be 0, 1, -1, 2, -2, 3, or -3; it is set to %d.', invoker, options.iprint);
+        wmsg = sprintf('%s: invalid iprint; it should be 0, 1, -1, 2, -2, 3, or -3; it is set to %d.', invoker, iprint);
         warning(wid, '%s', wmsg);
         warnings = [warnings, wmsg];
     elseif options.iprint > 0 && user_says_quiet
@@ -1424,15 +1424,6 @@ if isfield(options, 'iprint')
             options.iprint = -options.iprint;
             validated = true;
         end
-    elseif options.iprint > 0 && options.fortran
-        % iprint > 0 is not supported when calling the Fortran code.
-        % This is because of I/O confliction between Fortran and MATLAB.
-        wid = sprintf('%s:IprintContradictFortran', invoker);
-        wmsg = sprintf('%s: iprint = %d but fortran = true; iprint is reset to %d and the output will be recorded in a .txt file.', invoker, options.iprint, -options.iprint);
-        options.iprint = -options.iprint;
-        warning(wid, '%s', wmsg);
-        warnings = [warnings, wmsg];
-        validated = true;
     elseif options.iprint ~= 0 && options.classical
         % In classical mode, a nonzero iprint = 0 is not supported.
         wid = sprintf('%s:IprintContradictClassical', invoker);

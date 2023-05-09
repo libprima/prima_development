@@ -65,15 +65,24 @@ filelist = 'ffiles.txt';
 
 
 % Compile the common files. They are shared by all solvers. We compile them only once.
+% Common Fortran source files.
+common_files = [list_files(common, filelist), fullfile(gateways, 'fmxapi.F'), fullfile(gateways, 'cbfun.F')];
 
-% debug.F contains debugging subroutines tailored for MEX.
+% gateways/debug.F contains debugging subroutines tailored for MEX. It replaces common/debug.F.
 copyfile(fullfile(gateways, 'debug.F'), common);
-% ppf.h contains preprocessing directives. It is needed only when compiling the common files.
+
+% gateways/fprint.F contains printing subroutines tailored for MEX. It replaces common/fprint.f.
+% N.B.: In the following, `delete` should not be called after `copyfile`, or it will not work on
+% Windows and macOS. On Windows, it is likely because of the case insensitivity of the file system.
+delete(fullfile(common, 'fprint.f'));
+copyfile(fullfile(gateways, 'fprint.F'), common);
+% Replace "fprint.f" with "fprint.F" in `common_files`.
+common_files = replace(common_files, 'fprint.f', 'fprint.F');  % `replace` is available since R2016b.
+
+% common/ppf.h contains preprocessing directives. It is needed only when compiling the common files.
 header_file = fullfile(common, 'ppf.h');
 header_file_bak = fullfile(common, 'ppf.bak');
 copyfile(header_file, header_file_bak);
-% Common Fortran source files.
-common_files = [list_files(common, filelist), fullfile(gateways, 'fmxapi.F'), fullfile(gateways, 'cbfun.F')];
 
 fprintf('Compiling the common files ... ');
 for idbg = 1 : length(debug_flags)
@@ -178,23 +187,23 @@ function prepare_header(header_file, precision, debug_flag)
 
 switch precision
 case {'s', 'single'}
-    rep_str(header_file, '#define REAL_PRECISION_ 64', '#define REAL_PRECISION_ 32');
-    rep_str(header_file, '#define REAL_PRECISION_ 128', '#define REAL_PRECISION_ 32');
-    rep_str(header_file, '#define QP_AVAILABLE_ 1', '#define QP_AVAILABLE_ 0');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 64', '#define PRIMA_REAL_PRECISION 32');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 128', '#define PRIMA_REAL_PRECISION 32');
+    rep_str(header_file, '#define PRIMA_QP_AVAILABLE 1', '#define PRIMA_QP_AVAILABLE 0');
 case {'q', 'quadruple'}
-    rep_str(header_file, '#define REAL_PRECISION_ 32', '#define REAL_PRECISION_ 128');
-    rep_str(header_file, '#define REAL_PRECISION_ 64', '#define REAL_PRECISION_ 128');
-    rep_str(header_file, '#define QP_AVAILABLE_ 0', '#define QP_AVAILABLE_ 1');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 32', '#define PRIMA_REAL_PRECISION 128');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 64', '#define PRIMA_REAL_PRECISION 128');
+    rep_str(header_file, '#define PRIMA_QP_AVAILABLE 0', '#define PRIMA_QP_AVAILABLE 1');
 otherwise
-    rep_str(header_file, '#define REAL_PRECISION_ 32', '#define REAL_PRECISION_ 64');
-    rep_str(header_file, '#define REAL_PRECISION_ 128', '#define REAL_PRECISION_ 64');
-    rep_str(header_file, '#define QP_AVAILABLE_ 1', '#define QP_AVAILABLE_ 0');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 32', '#define PRIMA_REAL_PRECISION 64');
+    rep_str(header_file, '#define PRIMA_REAL_PRECISION 128', '#define PRIMA_REAL_PRECISION 64');
+    rep_str(header_file, '#define PRIMA_QP_AVAILABLE 1', '#define PRIMA_QP_AVAILABLE 0');
 end
 
 if debug_flag
-    rep_str(header_file, '#define DEBUGGING_ 0', '#define DEBUGGING_ 1');
+    rep_str(header_file, '#define PRIMA_DEBUGGING 0', '#define PRIMA_DEBUGGING 1');
 else
-    rep_str(header_file, '#define DEBUGGING_ 1', '#define DEBUGGING_ 0');
+    rep_str(header_file, '#define PRIMA_DEBUGGING 1', '#define PRIMA_DEBUGGING 0');
 end
 
 % PREPARE_HEADER ends
