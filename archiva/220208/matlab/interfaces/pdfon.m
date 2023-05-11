@@ -323,7 +323,7 @@ function [x, fx, exitflag, output] = pdfon(varargin)
 %
 % 2. Warnings that may be raised by pdfo
 % 2.1. All the  warnings are considered to be public, i.e., they are
-% desigened to be shown to the users.
+% designed to be shown to the users.
 % 2.2. Warnings are displayed without the call stack trace.
 %
 % 3. probinfo

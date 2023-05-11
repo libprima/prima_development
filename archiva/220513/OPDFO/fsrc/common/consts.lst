@@ -8540,7 +8540,7 @@
         236     1      ! 2. NF may not be present. Hence we should NOT use NF but NF_LOC.
         237     1      ! 3. When SIZE(XHIST_LOC, 2) > NF_LOC, which is the normal case in practice, XHIST_LOC contains
         238     1      ! GARBAGE in XHIST_LOC(:, NF_LOC + 1 : END). Therefore, we MUST cap XHIST at NF_LOC so that
-        239     1      ! XHIST cointains only valid history. For this reason, there is no way to avoid allocating
+        239     1      ! XHIST contains only valid history. For this reason, there is no way to avoid allocating
         240     1      ! two copies of memory for XHIST unless we declare it to be a POINTER instead of ALLOCATABLE.
         241     1  end if
         242        ! F2003 automatically deallocate local ALLOCATABLE variables at exit, yet we prefer to deallocate

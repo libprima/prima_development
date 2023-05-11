@@ -240,7 +240,7 @@ xpt = xpt - spread(xopt, dim=2, ncopies=npt)
 ! Update the gradient of the model
 pq(1:n) = pq(1:n) + smat_mul_vec(pq(n + 1:npt - 1), xopt)
 
-! Upda the gradient of the Lagrange functions.
+! Update the gradient of the Lagrange functions.
 do k = 1, npt
     pl(1:n, k) = pl(1:n, k) + smat_mul_vec(pl(n + 1:npt - 1, k), xopt)
 end do
