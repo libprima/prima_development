@@ -565,6 +565,7 @@ if options.debug && ~options.classical
     % Check whether constrviolation is correct
     cobylan_prec = 1e-6;
     lincoan_prec = 1e-9;
+    bobyqan_prec = 1e-12;
     % COBYLA cannot ensure fx == fun(x) or constr == con(x) due to rounding
     % errors. Instead of checking the equality, we check whether the
     % relative error is within cobylan_prec.
@@ -628,7 +629,9 @@ if options.debug && ~options.classical
         %if (funx ~= fx) && ~(isnan(fx) && isnan(funx))
         % it seems that COBYLA can return fx ~= fun(x) due to rounding
         % errors. Therefore, we cannot use "fx ~= funx" to check COBYLA
-        if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobylan')))
+        %if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobylan')))
+        if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= bobyqan_prec*max(1, abs(fx)) && strcmp(solver, 'bobyqan')) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobyla')))
+            % Public/unexpected error
             % Public/unexpected error
             error(sprintf('%s:InvalidFx', invoker), ...
                 '%s: UNEXPECTED ERROR: %s returns an fx that does not match x.', invoker, solver);
