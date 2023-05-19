@@ -679,6 +679,9 @@ if options.debug && ~options.classical
         if (funx ~= funx) || (funx > funcmax)
             funx = funcmax;
         end
+        if (funx < -realmax)
+            funx = -realmax;
+        end
         %if (funx ~= fx) && ~(isnan(fx) && isnan(funx))
         % It seems that COBYLA can return fx ~= fun(x) due to rounding errors. Therefore, we cannot
         % use "fx ~= funx" to check COBYLA.
@@ -701,6 +704,7 @@ if options.debug && ~options.classical
             % Due to the moderated extreme barrier (implemented when options.classical is false),
             % all function values that are NaN or above funcmax are replaced by funcmax.
             fhistx(fhistx ~= fhistx | fhistx > funcmax) = funcmax;
+            fhistx(fhistx < -realmax) = -realmax;
             if any(~(isnan(fhist) & isnan(fhistx)) & ~((fhist == fhistx) ...
                     | (abs(fhistx-fhist) <= lincoa_norma_prec*max(1, abs(fhist)) & strcmp(solver, 'lincoa_norma'))  ...
                     | (abs(fhistx-fhist) <= cobyla_norma_prec*max(1, abs(fhist)) & strcmp(solver, 'cobyla_norma'))))

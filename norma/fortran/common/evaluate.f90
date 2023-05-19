@@ -6,7 +6,7 @@ module evaluate_mod
 !
 ! Started: August 2021
 !
-! Last Modified: Tuesday, December 13, 2022 PM12:54:25
+! Last Modified: Friday, May 19, 2023 PM12:55:59
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -49,7 +49,7 @@ pure elemental function moderatef(f) result(y)
 ! This function moderates the function value of a MINIMIZATION problem. It replaces NaN and any
 ! value above FUNCMAX by FUNCMAX.
 !--------------------------------------------------------------------------------------------------!
-use, non_intrinsic :: consts_mod, only : RP, FUNCMAX
+use, non_intrinsic :: consts_mod, only : RP, FUNCMAX, REALMAX
 use, non_intrinsic :: infnan_mod, only : is_nan
 implicit none
 
@@ -63,6 +63,7 @@ if (is_nan(f)) then
     y = FUNCMAX
 end if
 y = min(FUNCMAX, y)
+y = max(-REALMAX, y)
 ! We may moderate huge negative function values, but we decide not to.
 !y = max(-FUNCMAX, min(FUNCMAX, y))
 end function moderatef

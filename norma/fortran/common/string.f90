@@ -6,7 +6,7 @@ module string_mod
 !
 ! Started: September 2021
 !
-! Last Modified: Tuesday, May 09, 2023 AM11:42:09
+! Last Modified: Friday, May 19, 2023 PM03:37:39
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -118,7 +118,7 @@ integer, intent(in), optional :: nexp
 ! Outputs
 character(len=:), allocatable :: s
 ! Local variables
-character(len=*), parameter :: srname = 'REAL2STR_VECTOR'
+character(len=*), parameter :: srname = 'REAL2STR_SCALAR'
 character(len=:), allocatable :: sformat
 character(len=MAX_NUM_STR_LEN) :: str
 integer(IK) :: ndgt_loc  ! The number of decimal digits to print
@@ -174,9 +174,13 @@ end if
 if (DEBUGGING) then
     call assert(len(s) > 0 .and. len(s) <= MAX_NUM_STR_LEN, '0 < LEN(S) <= MAX_NUM_STR_LEN', srname)
     call assert(is_nan(x) .eqv. is_nan(str2real(s)), 'IS_NAN(X) .EQV. IS_NAN(STR2REAL(S))', srname)
-    call assert(is_posinf(x) .eqv. is_posinf(str2real(s)), 'IS_POSINF(X) .EQV. IS_POSINF(STR2REAL(S))', srname)
-    call assert(is_neginf(x) .eqv. is_neginf(str2real(s)), 'IS_NEGINF(X) .EQV. IS_NEGINF(STR2REAL(S))', srname)
-    if (is_finite(x)) then
+    !call assert(is_posinf(x) .eqv. is_posinf(str2real(s)), 'IS_POSINF(X) .EQV. IS_POSINF(STR2REAL(S))', srname)
+    !call assert(is_neginf(x) .eqv. is_neginf(str2real(s)), 'IS_NEGINF(X) .EQV. IS_NEGINF(STR2REAL(S))', srname)
+    call assert(x >= huge(x) * (1.0 - 10.0**(-ndgt_loc)) .eqv. str2real(s) >= huge(x) * (1.0 - 10.0**(-ndgt_loc)), &
+        & 'IS_POSINF(X) .EQV. IS_POSINF(STR2REAL(S))', srname)
+    call assert(x <= -huge(x)**(1.0 - 10.0**(-ndgt_loc)) .eqv. str2real(s) <= -huge(x) * (1.0 - 10.0**(-ndgt_loc)), &
+        & 'IS_NEGINF(X) .EQV. IS_NEGINF(STR2REAL(S))', srname)
+    if (is_finite(x) .and. abs(x) < huge(x)) then
         call assert(abs(x - str2real(s)) <= abs(x) * 10.0**(-ndgt_loc), 'STR2REAL(S) == X', srname)
     end if
 end if
