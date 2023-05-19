@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Saturday, April 15, 2023 PM05:16:22
+! Last Modified: Friday, May 19, 2023 PM11:10:44
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -667,7 +667,7 @@ end if
 
 cmin = minval(conmat, dim=2)
 cmax = maxval(conmat, dim=2)
-if (any(cmin < HALF * cmax)) then
+if (any(cmin < HALF * cmax) .and. maxval(fval) > minval(fval)) then
     denom = minval(max(cmax, ZERO) - cmin, mask=(cmin < HALF * cmax))
     r = (maxval(fval) - minval(fval)) / denom
 else

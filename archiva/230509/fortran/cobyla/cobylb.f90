@@ -674,7 +674,7 @@ end if
 
 cmin = minval(conmat, dim=2)
 cmax = maxval(conmat, dim=2)
-if (any(cmin < HALF * cmax)) then
+if (any(cmin < HALF * cmax) .and. maxval(fval) > minval(fval)) then
     denom = minval(max(cmax, ZERO) - cmin, mask=(cmin < HALF * cmax))
     r = (maxval(fval) - minval(fval)) / denom
 else
