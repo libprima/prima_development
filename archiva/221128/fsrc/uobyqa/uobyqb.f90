@@ -11,7 +11,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, November 28, 2022 PM09:46:48
+! Last Modified: Monday, May 29, 2023 PM06:56:37
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -181,7 +181,9 @@ do while (.true.)
     xopt = xpt(:, kopt)
     g = pq(1:n) + smat_mul_vec(pq(n + 1:npt - 1), xopt)
     h = vec2smat(pq(n + 1:npt - 1))
+!write (16, *) nf, delta, g, h, trtol
     call trstep(delta, g, h, trtol, d, crvmin)
+!write (16, *) crvmin, d
 
     ! Check whether D is too short to invoke a function evaluation.
     dnorm = min(delta, sqrt(sum(d**2)))
@@ -202,6 +204,13 @@ do while (.true.)
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write (16, *) 'tr'
+!write (16, *) 'nf', nf
+!write (16, *) 'xbase', xbase
+!write (16, *) 'xopt', xopt
+!write (16, *) 'd', d
+!write (16, *) 'x', x
+
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, iprint, nf, f, x)
@@ -346,12 +355,19 @@ do while (.true.)
         ! improve the performance slightly according to a test on 20220720.
         delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
 
-        d = geostep(g, h, delbar)
+        d = geostep(g, h, delbar, knew_geo, xpt, xopt)
 
         ! Calculate the next value of the objective function.
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write (16, *) 'geo'
+!write (16, *) 'nf', nf
+!write (16, *) 'xbase', xbase
+!write (16, *) 'xopt', xopt
+!write (16, *) 'd', d
+!write (16, *) 'x', x
+
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, iprint, nf, f, x)
@@ -406,6 +422,13 @@ if (info == SMALL_TR_RADIUS .and. shortd .and. nf < maxfun) then
     x = xbase + (xopt + d)
     call evaluate(calfun, x, f)
     nf = nf + 1
+!write (16, *) 'small'
+!write (16, *) 'nf', nf
+!write (16, *) 'xbase', xbase
+!write (16, *) 'xopt', xopt
+!write (16, *) 'd', d
+!write (16, *) 'x', x
+
     ! Print a message about the function evaluation according to IPRINT.
     call fmsg(solver, iprint, nf, f, x)
     ! Save X, F into the history.

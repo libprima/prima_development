@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, November 04, 2022 PM04:49:50
+! Last Modified: Monday, May 29, 2023 PM03:57:27
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -143,12 +143,14 @@ gsq = sum(gg**2)
 gnorm = sqrt(gsq)
 
 if (is_nan(gsq)) then
+!write (17, *) 'gsq is NaN', d
     return
 end if
 if (.not. any(abs(hh) > 0)) then
     if (gnorm > 0) then
         d = -(delta / gnorm) * gg
     end if
+!write (17, *) 'hh=0', d
     return
 end if
 
@@ -166,6 +168,7 @@ if (n == 1) then
             crvmin = h(1, 1)  ! If we use HH(1, 1) here, then we need to scale it back.
         end if
     end if
+!write (17, *) 'n=1', d
     return
 end if
 
@@ -190,6 +193,7 @@ end do
 ! are both Inf, then GNORM/DELTA - HNORM = NaN).
 !--------------------------------------------------------------------------------------------------!
 if (.not. is_finite(sum(abs(gg)) + sum(abs(hh)) + sum(abs(td)) + sum(abs(tn)))) then
+!write (17, *) 'GG, HH, TD, or TN is not finite', d
     return
 end if
 
@@ -212,6 +216,8 @@ paruest = ZERO  ! Estimation for PARU
 posdef = .false.
 iter = 0
 maxiter = min(1000_IK, 100_IK * int(n, IK))  ! What is the theoretical bound of iterations?
+
+dold = 0.0_RP
 
 do while (.true.)
 
@@ -263,7 +269,7 @@ do while (.true.)
         paru = par
         paruest = par
         if (par <= 0) then  ! PAR == 0. A rare case: the trust region center is optimal.
-            write (16, *) iter, 271, d
+!write (16, *) iter, 271, d
             exit
         end if
     end if

@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, November 28, 2022 PM09:39:24
+! Last Modified: Monday, May 29, 2023 PM06:02:35
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -150,7 +150,7 @@ end if
 end function setdrop_tr
 
 
-function geostep(g, h, delbar) result(d)
+function geostep(g, h, delbar, knew, xpt, xopt) result(d)
 
 ! Generic modules
 use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, TWO, HALF, QUART, DEBUGGING
@@ -161,8 +161,11 @@ use, non_intrinsic :: linalg_mod, only : issymmetric, matprod, inprod, norm, tru
 implicit none
 
 ! Inputs
+integer(IK), intent(in) :: knew
+real(RP), intent(in) :: xopt(:)
 real(RP), intent(in) :: g(:)  ! G(N)
 real(RP), intent(in) :: h(:, :)  ! H(N, N)
+real(RP), intent(in) :: xpt(:, :)
 real(RP), intent(in) :: delbar
 
 ! Outputs
@@ -209,14 +212,22 @@ end if
 ! Calculate the Cauchy step as a backup.
 gg = sum(g**2)
 ghg = inprod(g, matprod(h, g))
-dcauchy = (delbar / sqrt(gg)) * g
-if (ghg < 0) then
-    dcauchy = -dcauchy
+if (gg > 0 .and. gg <= huge(gg)) then
+    dcauchy = (delbar / sqrt(gg)) * g
+    if (ghg < 0) then
+        dcauchy = -dcauchy
+    end if
+else
+    dcauchy = xpt(:, knew) - xopt
+    scaling = delbar / sqrt(sum(dcauchy**2))
+    dcauchy = max(0.6_RP * scaling, min(HALF, scaling)) * dcauchy
 end if
 dcauchy(trueloc(is_nan(dcauchy))) = ZERO  ! DCAUCHY may contain NaN if the problem is ill-conditioned.
+!write (16, *) 'dcauchy = ', dcauchy
 
 if (is_nan(sum(abs(h)) + sum(abs(g)))) then
     d = dcauchy
+!write (16, *) 'NaN in G or H', d
     return
 end if
 
@@ -254,6 +265,7 @@ dhd = inprod(d, matprod(h, d))
 ! Zaikun 20220504: GG and DD can become 0 at this point due to rounding. Detected by IFORT.
 if (.not. (gg > 0 .and. dd > 0)) then
     d = dcauchy
+!write (16, *) 'GG or DD is 0', d
     return
 end if
 
@@ -272,6 +284,7 @@ if (.not. (gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd)
     if (sum(d**2) <= 0) then
         d = dcauchy
     end if
+!write (16, *) 'gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd', d
     return
 end if
 
@@ -344,6 +357,7 @@ d(trueloc(is_nan(d))) = ZERO  ! D may contain NaN if the problem is ill-conditio
 if (sum(d**2) <= 0) then
     d = dcauchy
 end if
+!write (16, *) 'normal', d
 
 !====================!
 !  Calculation ends  !

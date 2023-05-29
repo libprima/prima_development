@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, December 28, 2022 AM01:45:25
+! Last Modified: Monday, May 29, 2023 PM04:26:09
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -254,12 +254,12 @@ gg = sum(g**2)
 ghg = inprod(g, matprod(h, g))
 
 ! Calculate the Cauchy step as a backup. Powell's code does not have this, and D may be 0 or NaN.
-if (gg > 0) then
+if (gg > 0 .and. is_finite(gg)) then
     dcauchy = (delbar / sqrt(gg)) * g
     if (ghg < 0) then
         dcauchy = -dcauchy
     end if
-else ! GG is 0 or NaN due to rounding errors. Set DCAUCHY to a displacement from XOPT to XPT(:, KNEW).
+else ! GG is 0 or not finite. Set DCAUCHY to a displacement from XOPT to XPT(:, KNEW).
     dcauchy = xpt(:, knew) - xopt
     scaling = delbar / sqrt(sum(dcauchy**2))
     dcauchy = max(0.6_RP * scaling, min(HALF, scaling)) * dcauchy

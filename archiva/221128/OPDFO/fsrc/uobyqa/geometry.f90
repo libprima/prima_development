@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, November 10, 2022 PM04:07:24
+! Last Modified: Monday, May 29, 2023 PM06:02:20
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -19,7 +19,7 @@ public :: geostep
 contains
 
 
-subroutine geostep(g, h, delbar, d, vmax)
+subroutine geostep(g, h, delbar, d, vmax, xpt, knew, xopt)
 
 ! Generic modules
 use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, HALF, QUART, DEBUGGING
@@ -30,9 +30,12 @@ use, non_intrinsic :: linalg_mod, only : issymmetric, matprod, inprod
 implicit none
 
 ! Inputs
+real(RP), intent(in) :: xopt(:)
 real(RP), intent(in) :: g(:)  ! G(N)
 real(RP), intent(in) :: h(:, :)  ! H(N, N)
+real(RP), intent(in) :: xpt(:, :)
 real(RP), intent(in) :: delbar
+integer(IK), intent(in) :: knew
 
 ! Outputs
 real(RP), intent(out) :: d(:)  ! D(N)
@@ -80,16 +83,25 @@ end if
 
 gg = sum(g**2)
 ghg = inprod(g, matprod(h, g))
-dcauchy = (delbar / sqrt(gg)) * g
-if (ghg < 0) then
-    dcauchy = -dcauchy
+
+if (gg > 0 .and. gg <= huge(gg)) then
+    dcauchy = (delbar / sqrt(gg)) * g
+    if (ghg < 0) then
+        dcauchy = -dcauchy
+    end if
+else
+    dcauchy = xpt(:, knew) - xopt
+    scaling = delbar / sqrt(sum(dcauchy**2))
+    dcauchy = max(0.6_RP * scaling, min(HALF, scaling)) * dcauchy
 end if
 where (is_nan(dcauchy)) dcauchy = ZERO
+!write (17, *) 'dcauchy', dcauchy
 
 if (is_nan(sum(abs(h)) + sum(abs(g)))) then
     !d = ZERO
     d = dcauchy
     vmax = ZERO
+!write (17, *) 'NAN detected in H or G.', d
     return
 end if
 
@@ -130,6 +142,7 @@ if (.not. (gg > 0 .and. dd > 0)) then
     !d = ZERO
     d = dcauchy
     vmax = ZERO
+!write (17, *) 'GG or DD is 0.', d
     return
 end if
 
@@ -147,6 +160,7 @@ where (is_nan(d)) d = ZERO
 if (.not. (gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd)) then
     vmax = abs(scaling * (gd + HALF * scaling * dhd))
     if (sum(d**2) <= 0) d = dcauchy
+!write (17, *) 'GNORM * DD <= 0.5E-2 * DELBAR * ABS(DHD) OR VV <= 1.0E-4 * DD.', d
     return
 end if
 
@@ -219,6 +233,7 @@ d = tempd * d + tempv * v
 where (is_nan(d)) d = ZERO
 vmax = delbar * delbar * max(tempa, tempb, tempc)
 if (sum(d**2) <= 0) d = dcauchy
+!write (17, *) 'normal', d
 
 end subroutine geostep
 

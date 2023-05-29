@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, December 28, 2022 AM01:39:06
+! Last Modified: Monday, May 29, 2023 PM06:50:42
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -212,7 +212,7 @@ end if
 gg = sum(g**2)
 ghg = inprod(g, matprod(h, g))
 dcauchy = ZERO
-if (gg > 0) then
+if (gg > 0 .and. is_finite(gg)) then
     dcauchy = (delbar / sqrt(gg)) * g
     if (ghg < 0) then
         dcauchy = -dcauchy

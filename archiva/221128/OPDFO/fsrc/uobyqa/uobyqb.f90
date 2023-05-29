@@ -14,7 +14,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, November 28, 2022 PM01:40:57
+! Last Modified: Monday, May 29, 2023 PM06:56:42
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -186,7 +186,9 @@ do while (.true.)
     ! Generate the next trust region step and test its length. Set KNEW to -1 if the purpose of
     ! the next F will be to improve conditioning, and also calculate a lower bound on the
     ! Hessian term of the model Q.
+!write (17, *) nf, delta, g, h, trtol
     call trstep(delta, g, h, trtol, d, crvmin)
+!write (17, *) crvmin, d
     dnorm = min(delta, sqrt(sum(d**2)))
     errtol = ZERO
     shortd = (dnorm < HALF * rho)
@@ -222,6 +224,12 @@ do while (.true.)
         end if
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write (17, *) 'tr'
+!write (17, *) 'nf', nf
+!write (17, *) 'xbase', xbase
+!write (17, *) 'xopt', xopt
+!write (17, *) 'd', d
+!write (17, *) 'x', x
         call savehist(nf, x, xhist, f, fhist)
 
         if (is_nan(f) .or. is_posinf(f)) then
@@ -405,8 +413,7 @@ do while (.true.)
             !if (wmult * estvmax >= errtol .or. errtol == 0) then  ! The same as >=
             ! If the KNEW-th point may be replaced, then pick a D that gives a large value of
             ! the modulus of its Lagrange function within the trust region.
-            !call geostep(g, h, delbar, d, vmax)
-            call geostep(g, h, delbar, dtmp, vmax)
+            call geostep(g, h, delbar, dtmp, vmax, xpt, knew_geo, xopt)
             ! If WMULT * VMAX > ERRTOL, then D will be accepted as the geometry step; otherwise,
             ! we try the next KNEW.
             if (wmult * vmax >= errtol) then  ! Seems better than >
@@ -443,7 +450,7 @@ do while (.true.)
             !!MATLAB: [~, knew_geo] = max(distsq);
         g = pl(1:n, knew_geo) + smat_mul_vec(pl(n + 1:npt - 1, knew_geo), xopt)
         h = vec2smat(pl(n + 1:npt - 1, knew_geo))
-        call geostep(g, h, delbar, d, vmax)
+        call geostep(g, h, delbar, d, vmax, xpt, knew_geo, xopt)
         dnorm = min(delbar, sqrt(sum(d**2)))
         dnormsav = [dnormsav(2:size(dnormsav)), dnorm]
 
@@ -467,6 +474,14 @@ do while (.true.)
         end if
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write (17, *) 'geo'
+!write (17, *) 'nf', nf
+!write (17, *) 'xbase', xbase
+!write (17, *) 'xopt', xopt
+!write (17, *) 'd', d
+!write (17, *) 'x', x
+
+        ! Print a message about the function evaluation according to IPRINT.
         call savehist(nf, x, xhist, f, fhist)
 
         if (is_nan(f) .or. is_posinf(f)) then
@@ -564,6 +579,12 @@ if (info == SMALL_TR_RADIUS .and. shortd .and. nf < maxfun .and. is_finite(sum(a
     x = xbase + (xopt + d)
     call evaluate(calfun, x, f)
     nf = nf + 1
+!write (17, *) 'small'
+!write (17, *) 'nf', nf
+!write (17, *) 'xbase', xbase
+!write (17, *) 'xopt', xopt
+!write (17, *) 'd', d
+!write (17, *) 'x', x
     call savehist(nf, x, xhist, f, fhist)
 end if
 
@@ -580,7 +601,7 @@ call rangehist(nf, xhist, fhist)
 
 ! Postconditions
 
-!close (17)
+close (17)
 
 
 end subroutine uobyqb
