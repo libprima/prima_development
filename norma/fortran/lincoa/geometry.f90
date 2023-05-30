@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, May 30, 2023 PM02:08:51
+! Last Modified: Tuesday, May 30, 2023 PM02:37:26
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -390,7 +390,8 @@ if (any(is_inf(glag))) then
     where (is_posinf(glag)) glag = 1.0_RP
     where (is_neginf(glag)) glag = -1.0_RP
 end if
-if (normg > 0) then
+!if (normg > 0) then
+if (normg > EPS) then
     gstp = (delbar / normg) * glag
     if (inprod(gstp, hess_mul(gstp, xpt, pqlag)) < 0) then  ! <GSTP, HESS_LAG*GSTP> is negative
         gstp = -gstp
