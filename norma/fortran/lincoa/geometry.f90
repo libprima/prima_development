@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, May 30, 2023 PM02:37:26
+! Last Modified: Tuesday, May 30, 2023 PM02:48:59
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -384,14 +384,20 @@ den = calden(kopt, bmat, s, xpt, zmat, idz)  ! Indeed, only DEN(KNEW) is needed.
 denabs = abs(den(knew))
 
 ! Replace S with a steepest ascent step from XOPT if the latter provides a larger value of DENABS.
-normg = norm(glag)
+! Before doing so, we handle non-finite values in GLAG to avoid floating-point exceptions.
 where (is_nan(glag)) glag = 0.0_RP
 if (any(is_inf(glag))) then
-    where (is_posinf(glag)) glag = 1.0_RP
-    where (is_neginf(glag)) glag = -1.0_RP
+    where (is_posinf(glag))
+        glag = 1.0_RP
+    elsewhere(is_neginf(glag))
+        glag = -1.0_RP
+    elsewhere
+        glag = 0.0_RP
+    end where
 end if
-!if (normg > 0) then
-if (normg > EPS) then
+normg = norm(glag)
+if (normg > 0) then
+!if (normg > EPS) then
     gstp = (delbar / normg) * glag
     if (inprod(gstp, hess_mul(gstp, xpt, pqlag)) < 0) then  ! <GSTP, HESS_LAG*GSTP> is negative
         gstp = -gstp
@@ -422,10 +428,16 @@ feasible = (cstrv <= 0)
 ! small and leads to good feasibility. **This strategy is critical for the performance of LINCOA.**
 pglag = matprod(qfac(:, nact + 1:n), matprod(glag, qfac(:, nact + 1:n)))
 !!MATLAB: pglag = qfac(:, nact+1:n) * (glag' * qfac(:, nact+1:n))';
+! Handle non-finite values in PGLAG to avoid floating-point exceptions.
 where (is_nan(pglag)) pglag = 0.0_RP
 if (any(is_inf(pglag))) then
-    where (is_posinf(pglag)) pglag = 1.0_RP
-    where (is_neginf(pglag)) pglag = -1.0_RP
+    where (is_posinf(pglag))
+        pglag = 1.0_RP
+    elsewhere(is_neginf(pglag))
+        pglag = -1.0_RP
+    elsewhere
+        pglag = 0.0_RP
+    end where
 end if
 normg = norm(pglag)
 if (nact > 0 .and. nact < n .and. normg > EPS) then  ! EPS prevents floating point exception.
