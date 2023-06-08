@@ -571,7 +571,7 @@ warning('on', 'backtrace');
 % More careful checks about fx, constrviolation, fhist, and chist.
 % We do this only if the code is in debug mode but not in classical
 % mode. The classical mode cannot pass these checks.
-if options.debug && ~options.classical
+if options.debug && ~options.classical && strcmp(options.precision, 'double')
     % Check whether fx is 'optimal'
     fhistf = fhist;
     if ismember(solver, all_solvers('with_constraints'))

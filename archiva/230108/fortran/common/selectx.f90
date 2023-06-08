@@ -8,7 +8,7 @@ module selectx_mod
 !
 ! Started: September 2021
 !
-! Last Modified: Monday, November 14, 2022 AM08:50:38
+! Last Modified: Thursday, June 08, 2023 PM01:24:51
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -259,6 +259,11 @@ end if
 !====================!
 ! Calculation starts !
 !====================!
+
+!write (16, *) 'ctol', ctol, cweight
+!write (16, *) 'fhist', fhist
+!write (16, *) 'chist', chist, chist <= ctol
+!close (16)
 
 ! We select X among the points with F < FREF and CSTRV < CREF.
 ! Do NOT use F <= FREF, because F == FREF (HUGEFUN or HUGENUM) may mean F == INF in practice!
