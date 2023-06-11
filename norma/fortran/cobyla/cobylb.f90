@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Sunday, June 11, 2023 PM05:15:02
+! Last Modified: Sunday, June 11, 2023 PM11:21:11
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -108,7 +108,7 @@ integer(IK) :: n
 integer(IK) :: nfilt
 integer(IK) :: nhist
 integer(IK) :: subinfo
-integer(IK) :: tr
+integer(IK) :: tr, iter
 logical :: bad_trstep
 logical :: adequate_geo
 logical :: evaluated(size(x) + 1)
@@ -281,6 +281,7 @@ gamma3 = max(ONE, min(0.75_RP * gamma2, 1.5_RP))
 ! The following MAXTR is unlikely to be reached.
 maxtr = max(maxfun, 2_IK * maxfun)  ! MAX: precaution against overflow, which will make 2*MAXFUN < 0.
 info = MAXTR_REACHED
+iter = 0
 
 ! Begin the iterative procedure.
 ! After solving a trust-region subproblem, we use three boolean variables to control the workflow.
@@ -289,18 +290,25 @@ info = MAXTR_REACHED
 ! will be taken, corresponding to the "Branch (Delta)" in the COBYLA paper.
 ! REDUCE_RHO - Will we reduce rho after the trust-region iteration?
 ! COBYLA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
+!write (17, *) 'n = ', n
 do tr = 1, maxtr
 
-    conmat_in = conmat
-    cval_in = cval
-    fval_in = fval
-    sim_in = sim
-    simi_in = simi
+    iter = iter + 1
+
+    if (iter == 1) then
+        conmat_in = conmat
+        cval_in = cval
+        fval_in = fval
+        sim_in = sim
+        simi_in = simi
+    end if
 
     call updatepole(cpen, conmat_in, cval_in, fval_in, sim_in, simi_in, subinfo)
+!    write (17, *) iter, cval_in, fval_in
     ! Check whether to exit due to damaging rounding in UPDATEPOLE.
     if (subinfo == DAMAGING_ROUNDING) then
         !info = subinfo
+!        write (17, *) 'DAMAGING_ROUNDING'
         exit  ! Better action to take? Geometry step, or sim_inply continue?
     end if
 
@@ -363,8 +371,17 @@ do tr = 1, maxtr
         cpen = max(cpen, min(-TWO * (preref / prerec), REALMAX))  ! The 1st (out of 2) update of CPEN.
         if (findpole(cpen, cval_in, fval_in) <= n) then
             cycle
+        else
+!            write (17, *) 'findpole'
         end if
+    else
+!        write (17, *) 'shortd'
     end if
+
+!    write (17, *) iter
+!    write (17, *) nf, '----'
+
+    iter = 0
 
 
     ! Switch the best vertex of the current simplex to SIM(:, N + 1).
