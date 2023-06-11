@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Sunday, June 11, 2023 PM04:12:46
+! Last Modified: Sunday, June 11, 2023 PM05:15:02
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -152,6 +152,14 @@ real(RP), parameter :: factor_delta = 1.1_RP  ! The factor delta in the COBYLA p
 real(RP), parameter :: factor_gamma = HALF  ! The factor gamma in the COBYLA paper
 real(RP) :: ratio  ! Reduction ratio: ACTREM/PREREM
 
+
+real(RP) :: conmat_in(size(conmat, 1), size(conmat, 2))
+real(RP) :: sim_in(size(sim, 1), size(sim, 2))
+real(RP) :: simi_in(size(simi, 1), size(simi, 2))
+real(RP) :: cval_in(size(cval))
+real(RP) :: fval_in(size(fval))
+
+
 ! Sizes
 m = int(size(constr), kind(m))
 n = int(size(x), kind(n))
@@ -282,19 +290,38 @@ info = MAXTR_REACHED
 ! REDUCE_RHO - Will we reduce rho after the trust-region iteration?
 ! COBYLA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 do tr = 1, maxtr
+
+    conmat_in = conmat
+    cval_in = cval
+    fval_in = fval
+    sim_in = sim
+    simi_in = simi
+
+    call updatepole(cpen, conmat_in, cval_in, fval_in, sim_in, simi_in, subinfo)
+    ! Check whether to exit due to damaging rounding in UPDATEPOLE.
+    if (subinfo == DAMAGING_ROUNDING) then
+        !info = subinfo
+        exit  ! Better action to take? Geometry step, or sim_inply continue?
+    end if
+
+    ! N.B.: The CYCLE can occur at most N times before a new function evaluation takes
+    ! place. This is because the update of CPEN does not decrease CPEN, and hence it can
+    ! make vertex J (J <= N) become the new optimal vertex only if CVAL(J) < CVAL(N+1),
+    ! which can happen at most N times. See the paragraph below (9) in the COBYLA paper.
+
     ! Before the trust-region step, UPDATEPOLE has been called either implicitly by INITXFC/UPDATEXFC
     ! or explicitly after CPEN is updated, so that SIM(:, N + 1) is the optimal vertex.
 
     ! Calculate the linear approximations to the objective and constraint functions, placing minus
     ! the objective function gradient after the constraint gradients in the array A.
     ! N.B.: TRSTLP accesses A mostly by columns, so it is more reasonable to save A instead of A^T.
-    A(:, 1:m) = transpose(matprod(conmat(:, 1:n) - spread(conmat(:, n + 1), dim=2, ncopies=n), simi))
-    !!MATLAB: A(:, 1:m) = simi'*(conmat(:, 1:n) - conmat(:, n+1))' % Implicit expansion for subtraction
-    A(:, m + 1) = matprod(fval(n + 1) - fval(1:n), simi)
+    A(:, 1:m) = transpose(matprod(conmat_in(:, 1:n) - spread(conmat_in(:, n + 1), dim=2, ncopies=n), simi_in))
+    !!MATLAB: A(:, 1:m) = simi_in'*(conmat_in(:, 1:n) - conmat_in(:, n+1))' % Implicit expansion for subtraction
+    A(:, m + 1) = matprod(fval_in(n + 1) - fval_in(1:n), simi_in)
 
     ! Theoretically (but not numerically), the last entry of B does not affect the result of TRSTLP.
     ! We set it to -FVAL(N + 1) following Powell's code.
-    b = [-conmat(:, n + 1), -fval(n + 1)]
+    b = [-conmat_in(:, n + 1), -fval_in(n + 1)]
     ! Calculate the trust-region trial step D. Note that D does NOT depend on CPEN.
     d = trstlp(A, b, delta)
     dnorm = min(delta, norm(d))
@@ -316,7 +343,7 @@ do tr = 1, maxtr
     ! 2. PREREF may be negative or zero, but it is positive when PREREC = 0 and SHORTD is FALSE.
     ! 3. Due to 2, in theory, MAX(PREREC, PREREF) > 0 if SHORTD is FALSE.
     ! 4. In the code, MAX(PREREC, PREREF) is the counterpart of QRED in UOBYQA/NEWUOA/BOBYQA/LINCOA.
-    prerec = cval(n + 1) - maxval([b(1:m) - matprod(d, A(:, 1:m)), ZERO])
+    prerec = cval_in(n + 1) - maxval([b(1:m) - matprod(d, A(:, 1:m)), ZERO])
     preref = inprod(d, A(:, m + 1))  ! Can be negative.
 
     ! Increase CPEN if necessary to ensure PREREM > 0. Branch back if this change alters the
@@ -331,24 +358,22 @@ do tr = 1, maxtr
         ! Powell's code defines BARMU = -PREREF / PREREC, and CPEN is increased to 2*BARMU if and
         ! only if it is currently less than 1.5*BARMU, a very "Powellful" scheme. In our
         ! implementation, however, we set CPEN directly to the maximum between its current value and
-        ! 2*BARMU while handling possible overflow. This simplifies the scheme without worsening the
+        ! 2*BARMU while handling possible overflow. This sim_inplifies the scheme without worsening the
         ! performance of COBYLA.
         cpen = max(cpen, min(-TWO * (preref / prerec), REALMAX))  ! The 1st (out of 2) update of CPEN.
-        if (findpole(cpen, cval, fval) <= n) then
-            call updatepole(cpen, conmat, cval, fval, sim, simi, subinfo)
-            ! Check whether to exit due to damaging rounding in UPDATEPOLE.
-            if (subinfo == DAMAGING_ROUNDING) then
-                info = subinfo
-                exit  ! Better action to take? Geometry step, or simply continue?
-            end if
+        if (findpole(cpen, cval_in, fval_in) <= n) then
             cycle
-            ! N.B.: The CYCLE can occur at most N times before a new function evaluation takes
-            ! place. This is because the update of CPEN does not decrease CPEN, and hence it can
-            ! make vertex J (J <= N) become the new optimal vertex only if CVAL(J) < CVAL(N+1),
-            ! which can happen at most N times. See the paragraph below (9) in the COBYLA paper.
         end if
     end if
 
+
+    ! Switch the best vertex of the current simplex to SIM(:, N + 1).
+    call updatepole(cpen, conmat, cval, fval, sim, simi, subinfo)
+    ! Check whether to exit due to damaging rounding in UPDATEPOLE.
+    if (subinfo == DAMAGING_ROUNDING) then
+        info = subinfo
+        exit  ! Better action to take? Geometry step, or simply continue?
+    end if
 
     ! Does the interpolation set have acceptable geometry? It affects IMPROVE_GEO and REDUCE_RHO.
     adequate_geo = assess_geo(delta, factor_alpha, factor_beta, sim, simi)
