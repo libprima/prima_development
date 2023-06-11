@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Sunday, June 11, 2023 PM11:21:11
+! Last Modified: Monday, June 12, 2023 AM02:03:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -257,7 +257,8 @@ end if
 ! regardless of ACTREM or PREREM. Similar for PREREC, PREREF, PREREM, RATIO, and JDROP_TR.
 rho = rhobeg
 delta = rhobeg
-cpen = ZERO
+!cpen = ZERO
+cpen = max(epsilon(cpen), fcratio(fval, conmat))
 prerec = -REALMAX
 preref = -REALMAX
 prerem = -REALMAX
@@ -429,7 +430,8 @@ do tr = 1, maxtr
     prerec = cval(n + 1) - maxval([b(1:m) - matprod(d, A(:, 1:m)), ZERO])
     preref = inprod(d, A(:, m + 1))  ! Can be negative.
 
-    if (shortd .or. .not. max(prerec, preref) > 0) then
+    !if (shortd .or. .not. max(prerec, preref) > 0) then
+    if (shortd .or. .not. preref + cpen * prerec > 0) then
         ! Reduce DELTA if D is short or D fails to render MAX(PREREC, PREREF) > 0, the latter can
         ! only happen due to rounding errors. This seems quite important for performance.
         delta = TENTH * delta
@@ -559,7 +561,8 @@ do tr = 1, maxtr
     ! most N invocations of GEOSTEP.
 
     ! BAD_TRSTEP: Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. max(prerec, preref) > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
+    !bad_trstep = (shortd .or. (.not. max(prerec, preref) > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
+    bad_trstep = (shortd .or. (.not. preref + cpen * prerec > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
     ! IMPROVE_GEO: Should we take a geometry step to improve the geometry of the interpolation set?
     improve_geo = (bad_trstep .and. .not. adequate_geo)
     ! REDUCE_RHO: Should we enhance the resolution by reducing RHO?
@@ -685,7 +688,8 @@ do tr = 1, maxtr
         delta = HALF * rho
         rho = redrho(rho, rhoend)
         delta = max(delta, rho)
-        cpen = min(cpen, fcratio(fval, conmat)) ! The 2nd (out of 2) update of CPEN. It may become 0
+        !cpen = min(cpen, fcratio(fval, conmat)) ! The 2nd (out of 2) update of CPEN. It may become 0
+        cpen = max(epsilon(cpen), min(cpen, fcratio(fval, conmat))) ! The 2nd (out of 2) update of CPEN. It may become 0
         ! Print a message about the reduction of RHO according to IPRINT.
         call rhomsg(solver, iprint, nf, fval(n + 1), rho, sim(:, n + 1), cval(n + 1), conmat(:, n + 1), cpen)
         call updatepole(cpen, conmat, cval, fval, sim, simi, subinfo)
