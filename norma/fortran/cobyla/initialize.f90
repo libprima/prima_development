@@ -8,7 +8,7 @@ module initialize_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Tuesday, April 11, 2023 AM11:11:14
+! Last Modified: Sunday, June 11, 2023 PM05:39:03
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -202,7 +202,7 @@ if (all(evaluated)) then
     simi = inv(sim(:, 1:n))
     ! Switch the optimal vertex (located by FINDPOLE) to SIM(:, N+1), which Powell called the "pole
     ! position". We call UPDATEPOLE with CPEN = ZERO, which is the initial value of CPEN.
-    call updatepole(ZERO, conmat, cval, fval, sim, simi, subinfo)
+    !call updatepole(ZERO, conmat, cval, fval, sim, simi, subinfo)
 end if
 
 !====================!
@@ -229,9 +229,8 @@ if (DEBUGGING) then
     call assert(all(is_finite(sim)), 'SIM is finite', srname)
     call assert(all(maxval(abs(sim(:, 1:n)), dim=1) > 0), 'SIM(:, 1:N) has no zero column', srname)
     call assert(size(simi, 1) == n .and. size(simi, 2) == n, 'SIZE(SIMI) == [N, N]', srname)
-    call assert(all(is_finite(simi)) .or. subinfo == DAMAGING_ROUNDING, 'SIMI is finite', srname)
-    call assert(isinv(sim(:, 1:n), simi, itol) .or. any(.not. evaluated) .or. &
-        & info == DAMAGING_ROUNDING, 'SIMI = SIM(:, 1:N)^{-1} unless the rounding is damaging', srname)
+    call assert(all(is_finite(simi)), 'SIMI is finite', srname)
+    call assert(isinv(sim(:, 1:n), simi, itol) .or. any(.not. evaluated), 'SIMI = SIM(:, 1:N)^{-1}', srname)
 end if
 
 end subroutine initxfc
