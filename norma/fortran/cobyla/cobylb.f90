@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 AM02:03:50
+! Last Modified: Monday, June 12, 2023 AM09:49:30
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -363,7 +363,8 @@ do tr = 1, maxtr
     ! However, as in Powell's implementation, if PREREC > 0 = PREREF = CPEN, then CPEN will
     ! remain zero, leaving PREREM = 0. If CPEN = 0 and PREREC > 0 > PREREF, then CPEN will
     ! become positive; if CPEN = 0, PREREC > 0, and PREREF > 0, then CPEN will remain zero.
-    if ((.not. shortd) .and. prerec > 0 .and. preref < 0) then
+    !if ((.not. shortd) .and. prerec > 0 .and. preref < 0) then
+    if (prerec > 0 .and. preref < 0) then
         ! Powell's code defines BARMU = -PREREF / PREREC, and CPEN is increased to 2*BARMU if and
         ! only if it is currently less than 1.5*BARMU, a very "Powellful" scheme. In our
         ! implementation, however, we set CPEN directly to the maximum between its current value and
