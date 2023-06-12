@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 AM09:49:30
+! Last Modified: Monday, June 12, 2023 AM11:31:45
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -432,7 +432,8 @@ do tr = 1, maxtr
     preref = inprod(d, A(:, m + 1))  ! Can be negative.
 
     !if (shortd .or. .not. max(prerec, preref) > 0) then
-    if (shortd .or. .not. preref + cpen * prerec > 0) then
+    !if (shortd .or. .not. preref + cpen * prerec > 0) then
+    if (shortd .or. .not. preref + cpen * prerec > 1.0E-5_RP * min(ONE, cpen) * rho**2) then
         ! Reduce DELTA if D is short or D fails to render MAX(PREREC, PREREF) > 0, the latter can
         ! only happen due to rounding errors. This seems quite important for performance.
         delta = TENTH * delta
@@ -563,7 +564,9 @@ do tr = 1, maxtr
 
     ! BAD_TRSTEP: Is the last trust-region step bad?
     !bad_trstep = (shortd .or. (.not. max(prerec, preref) > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
-    bad_trstep = (shortd .or. (.not. preref + cpen * prerec > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
+    !bad_trstep = (shortd .or. (.not. preref + cpen * prerec > 0) .or. ratio <= 0 .or. jdrop_tr == 0)
+    bad_trstep = (shortd .or. (.not. preref + cpen * prerec > 1.0E-5_RP * min(ONE, cpen) * rho**2) &
+        & .or. ratio <= 0 .or. jdrop_tr == 0)
     ! IMPROVE_GEO: Should we take a geometry step to improve the geometry of the interpolation set?
     improve_geo = (bad_trstep .and. .not. adequate_geo)
     ! REDUCE_RHO: Should we enhance the resolution by reducing RHO?

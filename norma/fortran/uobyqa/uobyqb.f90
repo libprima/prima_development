@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, April 15, 2023 PM05:09:41
+! Last Modified: Monday, June 12, 2023 AM11:32:28
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -225,7 +225,7 @@ do tr = 1, maxtr
     ! should be positive If it is nonpositive due to rounding errors, we will not take this step.
     qred = -quadinc(pq, d, xpt(:, kopt))  ! QRED = Q(XOPT) - Q(XOPT + D)
 
-    if (shortd .or. .not. qred > 0) then
+    if (shortd .or. .not. qred > epsilon(qred) * rho**2) then
         ! Powell's code does not reduce DELTA as follows. This comes from NEWUOA and works well.
         delta = TENTH * delta
         if (delta <= gamma3 * rho) then
@@ -337,24 +337,25 @@ do tr = 1, maxtr
 
     ! BAD_TRSTEP (for IMPROVE_GEO): Is the last trust-region step bad? For UOBYQA, it is CRITICAL to
     ! include DMOVE <= 4.0_RP*RHO**2 in the definition of BAD_TRSTEP for IMPROVE_GEO.
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. (ratio <= eta1 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
-    !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= eta1 .or. knew_tr == 0)  ! Works poorly!
+    bad_trstep = (shortd .or. (.not. qred > epsilon(qred) * rho**2) .or. (ratio <= eta1 .and. &
+        & ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
+    !bad_trstep = (shortd .or. (.not. qred > epsilon(qred)*rho**2) .or. ratio <= eta1 .or. knew_tr == 0)  ! Works poorly!
     improve_geo = bad_trstep .and. .not. adequate_geo
     ! BAD_TRSTEP (for REDUCE_RHO): Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)  ! Performs better than the below from Powell.
-    !bad_trstep = (shortd .or. (.not. qred > 0) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
+    bad_trstep = (shortd .or. (.not. qred > epsilon(qred) * rho**2) .or. ratio <= 0 .or. knew_tr == 0)  ! Performs better than the below from Powell.
+    !bad_trstep = (shortd .or. (.not. qred > epsilon(qred)*rho**2) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
     reduce_rho = bad_trstep .and. adequate_geo .and. small_trrad
 
     ! Equivalently, REDUCE_RHO can be set as follows. It shows that REDUCE_RHO is TRUE in two cases.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > epsilon(qred)*rho**2) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
     ! !reduce_rho = (shortd .and. accurate_mod) .or. (bad_trstep .and. close_itpset .and. small_trrad)
 
     ! With REDUCE_RHO properly defined, we can also set IMPROVE_GEO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. (ratio <= eta1 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > epsilon(qred)*rho**2) .or. (ratio <= eta1 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
     ! !improve_geo = bad_trstep .and. (.not. reduce_rho) .and. (.not. close_itpset)
 
     ! With IMPROVE_GEO properly defined, we can also set REDUCE_RHO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > epsilon(qred)*rho**2) .or. (ratio <= 0 .and. ddmove <= 4.0_RP * delta**2) .or. knew_tr == 0)
     ! !reduce_rho = bad_trstep .and. (.not. improve_geo) .and. small_trrad
 
     ! UOBYQA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
@@ -362,7 +363,7 @@ do tr = 1, maxtr
     !
     ! If SHORTD is TRUE or QRED > 0 is FALSE, then either IMPROVE_GEO or REDUCE_RHO is TRUE unless
     ! CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE.
-    !call assert((.not. shortd .and. qred > 0) .or. (improve_geo .or. reduce_rho .or. &
+    !call assert((.not. shortd .and. qred > epsilon(qred)*rho**2) .or. (improve_geo .or. reduce_rho .or. &
     !    & (close_itpset .and. .not. small_trrad)), 'If SHORTD is TRUE or QRED > 0 is FALSE, then either&
     !    & IMPROVE_GEO or REDUCE_RHO is TRUE unless CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE', srname)
     !----------------------------------------------------------------------------------------------!

@@ -15,7 +15,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, April 15, 2023 PM09:00:15
+! Last Modified: Monday, June 12, 2023 AM11:29:13
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -362,7 +362,7 @@ do tr = 1, maxtr
     ! should be positive If it is nonpositive due to rounding errors, we will not take this step.
     qred = -quadinc(d, xpt, gopt, pq, hq)  ! QRED = Q(XOPT) - Q(XOPT + D)
 
-    if (shortd .or. .not. qred > 0) then
+    if (shortd .or. .not. qred > 1.0E-5_RP * rho**2) then
         ! In this case, do nothing but reducing DELTA. Afterward, DELTA < DNORM may occur.
         ! N.B.: 1. This value of DELTA will be discarded if REDUCE_RHO turns out TRUE later.
         ! 2. Powell's code does not shrink DELTA when QRED > 0 is FALSE (i.e., when VQUAD >= 0 in
@@ -482,22 +482,22 @@ do tr = 1, maxtr
     ! N.B.: If SHORTD is TRUE at the very first iteration, then REDUCE_RHO will be set to TRUE.
 
     ! BAD_TRSTEP (for IMPROVE_GEO): Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= eta1 .or. knew_tr == 0)
+    bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP * rho**2) .or. ratio <= eta1 .or. knew_tr == 0)
     improve_geo = bad_trstep .and. .not. adequate_geo
     ! BAD_TRSTEP (for REDUCE_RHO): Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP * rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     reduce_rho = bad_trstep .and. adequate_geo .and. small_trrad
 
     ! Equivalently, REDUCE_RHO can be set as follows. It shows that REDUCE_RHO is TRUE in two cases.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     ! !reduce_rho = (shortd .and. accurate_mod) .or. (bad_trstep .and. close_itpset .and. small_trrad)
 
     ! With REDUCE_RHO properly defined, we can also set IMPROVE_GEO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= eta1 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= eta1 .or. knew_tr == 0)
     ! !improve_geo = bad_trstep .and. (.not. reduce_rho) .and. (.not. close_itpset)
 
     ! With IMPROVE_GEO properly defined, we can also set REDUCE_RHO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     ! !reduce_rho = bad_trstep .and. (.not. improve_geo) .and. small_trrad
 
     ! LINCOA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
@@ -505,7 +505,7 @@ do tr = 1, maxtr
     !
     ! If SHORTD is TRUE or QRED > 0 is FALSE, then either REDUCE_RHO or IMPROVE_GEO is TRUE unless
     ! CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE.
-    !call assert((.not. shortd .and. qred > 0) .or. (improve_geo .or. reduce_rho .or. &
+    !call assert((.not. shortd .and. qred > 1.0E-5_RP*rho**2) .or. (improve_geo .or. reduce_rho .or. &
     !    & (close_itpset .and. .not. small_trrad)), 'If SHORTD is TRUE or QRED > 0 is FALSE, then either&
     !    & IMPROVE_GEO or REDUCE_RHO is TRUE unless CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE', srname)
     !----------------------------------------------------------------------------------------------!

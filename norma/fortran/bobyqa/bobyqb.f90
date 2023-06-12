@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, April 15, 2023 PM05:10:29
+! Last Modified: Monday, June 12, 2023 AM11:28:49
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -294,7 +294,7 @@ do tr = 1, maxtr
     ! center may be an approximate local minimizer up to the current "resolution" of the algorithm.
     ! When this occurs, the algorithm takes the view that the work for the current RHO is complete,
     ! and hence it will reduce RHO, which will enhance the resolution of the algorithm in general.
-    if (shortd .or. .not. qred > 0) then
+    if (shortd .or. .not. qred > 1.0E-5_RP * rho**2) then
         delta = TENTH * delta
         if (delta <= gamma3 * rho) then
             delta = rho  ! Set DELTA to RHO when it is close to or below.
@@ -419,24 +419,24 @@ do tr = 1, maxtr
     ! Powell's code does not have (.NOT. QRED>0) in BAD_TRSTEP; it terminates if QRED > 0 fails.
 
     ! BAD_TRSTEP (for IMPROVE_GEO): Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= eta1 .or. knew_tr == 0)
+    bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP * rho**2) .or. ratio <= eta1 .or. knew_tr == 0)
     improve_geo = bad_trstep .and. .not. adequate_geo  ! See the text above (6.7) of the BOBYQA paper.
     ! BAD_TRSTEP (for REDUCE_RHO): Is the last trust-region step bad?
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP * rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     reduce_rho = bad_trstep .and. adequate_geo .and. small_trrad  ! See (6.7) of the BOBYQA paper.
     ! Zaikun 20221111: What if RESCUE has been called? Is it still reasonable to use RATIO?
     ! Zaikun 20221127: If RESCUE has been called, then KNEW_TR may be 0 even if RATIO > 0.
 
     ! Equivalently, REDUCE_RHO can be set as follows. It shows that REDUCE_RHO is TRUE in two cases.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     ! !reduce_rho = (shortd .and. accurate_mod) .or. (bad_trstep .and. close_itpset .and. small_trrad)
 
     ! With REDUCE_RHO properly defined, we can also set IMPROVE_GEO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= eta1 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= eta1 .or. knew_tr == 0)
     ! !improve_geo = bad_trstep .and. (.not. reduce_rho) .and. (.not. close_itpset)
 
     ! With IMPROVE_GEO properly defined, we can also set REDUCE_RHO as follows.
-    ! !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)
+    ! !bad_trstep = (shortd .or. (.not. qred > 1.0E-5_RP*rho**2) .or. ratio <= 0 .or. knew_tr == 0)
     ! !reduce_rho = bad_trstep .and. (.not. improve_geo) .and. small_trrad
 
     ! BOBYQA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
@@ -444,7 +444,7 @@ do tr = 1, maxtr
     !
     ! If SHORTD is TRUE or QRED > 0 is FALSE, then either IMPROVE_GEO or REDUCE_RHO is TRUE unless
     ! CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE.
-    !call assert((.not. shortd .and. qred > 0) .or. (improve_geo .or. reduce_rho .or. &
+    !call assert((.not. shortd .and. qred > 1.0E-5_RP*rho**2) .or. (improve_geo .or. reduce_rho .or. &
     !    & (close_itpset .and. .not. small_trrad)), 'If SHORTD is TRUE or QRED > 0 is FALSE, then either&
     !    & IMPROVE_GEO or REDUCE_RHO is TRUE unless CLOSE_ITPSET is TRUE but SMALL_TRRAD is FALSE', srname)
     !----------------------------------------------------------------------------------------------!
