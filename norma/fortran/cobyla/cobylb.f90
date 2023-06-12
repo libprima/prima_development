@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 AM11:31:45
+! Last Modified: Monday, June 12, 2023 PM09:21:11
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -258,7 +258,7 @@ end if
 rho = rhobeg
 delta = rhobeg
 !cpen = ZERO
-cpen = max(epsilon(cpen), fcratio(fval, conmat))
+cpen = max(epsilon(cpen), min(1.0E3_RP, fcratio(fval, conmat)))
 prerec = -REALMAX
 preref = -REALMAX
 prerem = -REALMAX
