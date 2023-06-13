@@ -229,7 +229,7 @@ function [x, fx, exitflag, output] = cobyla_norma(varargin)
 %       min cos(x) s.t. 2 * x <= 3
 %   starting from x0 = -1 with at most 50 function evaluations.
 %
-%   See also prima_norma, UOBYQA, NEWUOA, BOBYQA, LINCOA.
+%   See also prima_norma, uobyqa_norma, newuoa_norma, bobyqa_norma, lincoa_norma.
 %
 %   See www.libprima_norma.net for more information.
 %
@@ -515,7 +515,6 @@ function [constr, m_nlcineq, m_nlceq] = cobyla_norma_con(x, Aineq, bineq, Aeq, b
 cineq = [lb(lb>-inf) - x(lb>-inf); x(ub<inf) - ub(ub<inf)];
 ceq = [];
 if ~isempty(Aineq)
-    %cineq = [Aineq*x - bineq; cineq];
     cineq = [cineq; Aineq*x - bineq];
 end
 if ~isempty(Aeq)

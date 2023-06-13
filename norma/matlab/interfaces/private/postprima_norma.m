@@ -572,11 +572,15 @@ warning('on', 'backtrace');
 % More careful checks about fx, constrviolation, fhist, and chist.
 % We do this only if the code is in debug mode but not in classical
 % mode. The classical mode cannot pass these checks.
-if options.debug && ~options.classical && strcmp(options.precision, 'double')
+if options.debug && ~options.classical
     % Check whether fx is 'optimal'
     fhistf = fhist;
     if ismember(solver, all_solvers('with_constraints'))
-        fhistf = fhistf(chist <= max(cstrv_returned, 0));
+        if strcmp(options.precision, 'double')
+            fhistf = fhistf(chist <= max(cstrv_returned, 0));
+        else
+            fhistf = fhistf(chist <= max(cstrv_returned*(1 - eps), 0));
+        end
     end
     minf = min([fhistf, fx]);
     % Why excluding the case with options.precision = 'quadruple' in the following? Consider two
@@ -676,12 +680,10 @@ if options.debug && ~options.classical && strcmp(options.precision, 'double')
         end
         % Due to the moderated extreme barrier (implemented when options.classical is false),
         % all function values that are NaN or larger than funcmax are replaced by funcmax.
-        if (funx ~= funx) || (funx > funcmax)
-            funx = funcmax;
-        end
-        if (funx < -realmax)
-            funx = -realmax;
-        end
+        % In addition, all function values that are smaller than -realmax() are replaced by -realmax().
+        funx(isnan(funx) | funx > funcmax) = funcmax;
+        funx(funx < -realmax()) = -realmax();
+
         %if (funx ~= fx) && ~(isnan(fx) && isnan(funx))
         % It seems that COBYLA can return fx ~= fun(x) due to rounding errors. Therefore, we cannot
         % use "fx ~= funx" to check COBYLA.
@@ -703,8 +705,9 @@ if options.debug && ~options.classical && strcmp(options.precision, 'double')
             end
             % Due to the moderated extreme barrier (implemented when options.classical is false),
             % all function values that are NaN or above funcmax are replaced by funcmax.
+            % In addition, all function values that are smaller than -realmax() are replaced by -realmax().
             fhistx(fhistx ~= fhistx | fhistx > funcmax) = funcmax;
-            fhistx(fhistx < -realmax) = -realmax;
+            fhistx(fhistx < -realmax()) = -realmax();
             if any(~(isnan(fhist) & isnan(fhistx)) & ~((fhist == fhistx) ...
                     | (abs(fhistx-fhist) <= lincoa_norma_prec*max(1, abs(fhist)) & strcmp(solver, 'lincoa_norma'))  ...
                     | (abs(fhistx-fhist) <= cobyla_norma_prec*max(1, abs(fhist)) & strcmp(solver, 'cobyla_norma'))))

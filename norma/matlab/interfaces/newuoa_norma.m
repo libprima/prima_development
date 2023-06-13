@@ -152,7 +152,7 @@ function [x, fx, exitflag, output] = newuoa_norma(varargin)
 %       min cos(x)
 %   starting from x0 = -1 with at most 50 function evaluations.
 %
-%   See also prima_norma, UOBYQA, BOBYQA, LINCOA, COBYLA.
+%   See also prima_norma, uobyqa_norma, bobyqa_norma, lincoa_norma, cobyla_norma.
 %
 %   See www.libprima_norma.net for more information.
 %

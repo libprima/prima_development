@@ -193,7 +193,7 @@ function [x, fx, exitflag, output] = lincoa_norma(varargin)
 %       min cos(x) s.t. 2 * x <= 3
 %   starting from x0 = -1 with at most 50 function evaluations.
 %
-%   See also prima_norma, UOBYQA, NEWUOA, BOBYQA, COBYLA.
+%   See also prima_norma, uobyqa_norma, newuoa_norma, bobyqa_norma, cobyla_norma.
 %
 %   See www.libprima_norma.net for more information.
 %
@@ -363,8 +363,6 @@ else % The problem turns out 'normal' during preprima_norma
     ub = ub(ub < inf); % Remove infinity bounds!
     % Note that preprima_norma has removed the 'trivial' linear constraints in
     % [Aineq, bineq] and [Aeq, beq].
-    %A_aug = [Aineq; Aeq; -Aeq; -Alb; Aub]';
-    %b_aug = [bineq(:); beq(:); -beq(:); -lb(:); ub(:)];
     A_aug = [-Alb; Aub; Aineq; Aeq; -Aeq]';
     b_aug = [-lb(:); ub(:); bineq(:); beq(:); -beq(:)];
     if ~(isempty(A_aug) && isempty(b_aug)) && ~(size(A_aug,1) == n && size(A_aug,2) == length(b_aug))
