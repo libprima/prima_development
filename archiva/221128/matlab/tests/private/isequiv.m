@@ -129,7 +129,10 @@ else
         blacklist = [blacklist, {'ARGTRIGLS', 'BROWNAL', 'PENALTY3', 'VARDIM'}]; % More than 10 minutes to solve.
         blacklist = [blacklist, {'QPNBOEI2', 'QPCBOEI2', 'SPANHYD', 'SPANHYD', 'SPANHYD', 'MINSURF', 'QPCBLEND', 'LSQFIT', 'CVXQP1'}]; % Too long to solve
         blacklist = [blacklist, {'DUAL3', 'DUAL2', 'DUAL1', 'HIMMELBI', 'SIM2BQP', 'BQP1VAR', 'LUKSAN22LS','LUKSAN21LS'}]; % Too long to solve
-        blacklist = [blacklist, {'OSLBQP'}]; % |S| <= 2*DELTA fails
+        % N.B.: Starting from 20230618, we will ignore most of the numerical exceptions in the
+        % archiva versions, for which we only verify the faithfulness. Numerical exceptions will
+        % (only) be fixed in the modernized version if they happen there.
+        blacklist = [blacklist, {'OSLBQP'}]; % |S| <= 2*DELTA fails.
     case {'cobyla', 'cobylan'}
         blacklist = [blacklist, {'HS80', 'HS77', 'OSBORNE1'}];  % QRADD_RDIAG: Assertion failed: C^T*Q(:, N) == Rdiag(N).
         blacklist = [blacklist, {'PALMER4ANE', 'PALMER5BNE', 'MESH'}];
