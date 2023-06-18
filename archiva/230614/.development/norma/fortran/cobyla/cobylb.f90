@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 PM09:21:11
+! Last Modified: Sunday, June 18, 2023 PM03:30:20
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -292,9 +292,11 @@ iter = 0
 ! REDUCE_RHO - Will we reduce rho after the trust-region iteration?
 ! COBYLA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 !write (17, *) 'n = ', n
-do tr = 1, maxtr
+do while (.true.)!tr = 1, maxtr
 
     iter = iter + 1
+    !if (iter == 1) write (17, *) 'nf', nf
+    !write (17, *) iter, cpen
 
     if (iter == 1) then
         conmat_in = conmat
@@ -364,6 +366,7 @@ do tr = 1, maxtr
     ! remain zero, leaving PREREM = 0. If CPEN = 0 and PREREC > 0 > PREREF, then CPEN will
     ! become positive; if CPEN = 0, PREREC > 0, and PREREF > 0, then CPEN will remain zero.
     !if ((.not. shortd) .and. prerec > 0 .and. preref < 0) then
+    !write (17, *) iter, 'prerec, preref', prerec, preref
     if (prerec > 0 .and. preref < 0) then
         ! Powell's code defines BARMU = -PREREF / PREREC, and CPEN is increased to 2*BARMU if and
         ! only if it is currently less than 1.5*BARMU, a very "Powellful" scheme. In our
@@ -371,6 +374,7 @@ do tr = 1, maxtr
         ! 2*BARMU while handling possible overflow. This sim_inplifies the scheme without worsening the
         ! performance of COBYLA.
         cpen = max(cpen, min(-TWO * (preref / prerec), REALMAX))  ! The 1st (out of 2) update of CPEN.
+        !write (17, *) 'cpen', cpen, findpole(cpen, cval_in, fval_in), n, cval_in, fval_in
         if (findpole(cpen, cval_in, fval_in) <= n) then
             cycle
         else
@@ -747,6 +751,7 @@ if (DEBUGGING) then
         & 'No point in the history is better than X', srname)
 end if
 
+close (17)
 end subroutine cobylb
 
 

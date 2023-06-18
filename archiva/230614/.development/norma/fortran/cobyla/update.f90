@@ -8,7 +8,7 @@ module update_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 AM02:42:18
+! Last Modified: Sunday, June 18, 2023 PM03:10:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -397,10 +397,13 @@ end if
 jopt = int(size(fval), kind(jopt))  ! We use N + 1 as the default value of JOPT.
 phi = fval + cpen * cval
 phimin = minval(phi)
+!write (17, *) 'jopt'
+!write (17, *) fval, cval, phimin, phi
 !if (phimin < phi(jopt)) then  ! We keep JOPT = N + 1 unless there is a strictly better choice.
 if (phimin < phi(jopt) .or. any(cval < cval(jopt) .and. phi <= phimin)) then
     !jopt = int(minloc(phi, dim=1), kind(jopt))
     jopt = int(minloc(cval, mask=(phi <= phimin), dim=1), kind(jopt))
+    !write (17, *) 'jopt', jopt
 end if
 if (cpen <= 0 .and. any(cval < cval(jopt) .and. phi <= phimin)) then
     ! (CPEN <= 0) is indeed (CPEN == ZERO), and (PHI <= PHIMIN) is indeed (PHI == PHIMIN).

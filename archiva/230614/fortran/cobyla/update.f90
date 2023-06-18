@@ -8,7 +8,7 @@ module update_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, June 12, 2023 PM09:16:19
+! Last Modified: Sunday, June 18, 2023 PM02:47:22
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -397,10 +397,14 @@ end if
 jopt = int(size(fval), kind(jopt))  ! We use N + 1 as the default value of JOPT.
 phi = fval + cpen * cval
 phimin = minval(phi)
+!write (16, *) 'jopt'
+!write (16, *) fval, cval, phimin, phi
 ! Essentially, JOPT = MINLOC(PHI). However, we keep JOPT = N + 1 unless there is a strictly better
 ! choice. When there are multiple choices, we choose the JOPT with the smallest value of CVAL.
 if (phimin < phi(jopt) .or. any(cval < cval(jopt) .and. phi <= phi(jopt))) then
+!if (phimin < phi(jopt) .or. any(cval < cval(jopt) .and. phi <= phimin)) then
     jopt = int(minloc(cval, mask=(phi <= phimin), dim=1), kind(jopt))
+    !write (16, *) 'jopt', jopt
     !!MATLAB: cmin = min(cval(phi <= phimin)); jopt = find(phi <= phimin & cval <= cmin, 1, 'first');
 end if
 

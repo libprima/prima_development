@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Tuesday, June 13, 2023 PM08:36:35
+! Last Modified: Sunday, June 18, 2023 PM03:30:36
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -308,6 +308,7 @@ do tr = 1, maxtr
     ! 3. In GEOSTEP, deciding the direction of the geometry step.
     ! They do not appear explicitly in the trust-region subproblem, though the trust-region center
     ! (i.e., the current optimal vertex) is defined by them.
+    !write (16, *) 'nf', nf
     cpen = getcpen(conmat, cpen, cval, delta, fval, rho, sim, simi)
 
     ! Switch the best vertex of the current simplex to SIM(:, N + 1).
@@ -628,6 +629,7 @@ if (DEBUGGING) then
         & 'No point in the history is better than X', srname)
 end if
 
+close (16)
 end subroutine cobylb
 
 
@@ -733,7 +735,8 @@ prerec = ZERO
 ! the new optimal vertex only if CVAL(J) is less than CVAL(N+1), which can happen at most N times.
 ! See the paragraph below (9) in the COBYLA paper. After the "correct" optimal vertex is found,
 ! one more loop is needed to calculate CPEN, and hence the loop can occur at most N+1 times.
-do iter = 1, n + 1_IK
+do while (.true.)!iter = 1, n + 1_IK
+    !write (16, *) iter, cpen
     ! Switch the best vertex of the current simplex to SIM(:, N + 1).
     call updatepole(cpen, conmat, cval, fval, sim, simi, info)
     ! Check whether to exit due to damaging rounding in UPDATEPOLE.
@@ -754,6 +757,7 @@ do iter = 1, n + 1_IK
     ! Predict the change to F (PREREF) and to the constraint violation (PREREC) due to D.
     prerec = cval(n + 1) - maxval([b(1:m) - matprod(d, A(:, 1:m)), ZERO])
     preref = inprod(d, A(:, m + 1))  ! Can be negative.
+    !write (16, *) iter, 'prerec, preref', prerec, preref
 
     if (.not. (prerec > 0 .and. preref < 0)) then
         exit
@@ -765,6 +769,7 @@ do iter = 1, n + 1_IK
     ! 2*BARMU while handling possible overflow. This simplifies the scheme without worsening the
     ! performance of COBYLA.
     cpen = max(cpen, min(-TWO * (preref / prerec), REALMAX))
+    !write (16, *) 'cpen', cpen, findpole(cpen, cval, fval), n, cval, fval
 
     if (findpole(cpen, cval, fval) == n + 1) then
         exit
