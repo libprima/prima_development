@@ -630,8 +630,7 @@ if options.debug && ~options.classical
         % it seems that COBYLA can return fx ~= fun(x) due to rounding
         % errors. Therefore, we cannot use "fx ~= funx" to check COBYLA
         %if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobylan')))
-        if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= bobyqan_prec*max(1, abs(fx)) && strcmp(solver, 'bobyqan')) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobyla')))
-            % Public/unexpected error
+        if ~(isnan(fx) && isnan(funx)) && ~((fx == funx) || (abs(funx-fx) <= bobyqan_prec*max(1, abs(fx)) && strcmp(solver, 'bobyqan')) || (abs(funx-fx) <= cobylan_prec*max(1, abs(fx)) && strcmp(solver, 'cobylan')))
             % Public/unexpected error
             error(sprintf('%s:InvalidFx', invoker), ...
                 '%s: UNEXPECTED ERROR: %s returns an fx that does not match x.', invoker, solver);
