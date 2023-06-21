@@ -607,7 +607,7 @@ if options.debug && ~options.classical
     %cobyla_norma_prec = 1e-8;
     %bobyqa_norma_prec = 1e-10;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    cobyla_norma_prec = 1e-9;
+    cobyla_norma_prec = 1e-7;
     lincoa_norma_prec = 1e-9;
     bobyqa_norma_prec = 1e-12;
 
