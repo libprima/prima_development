@@ -120,7 +120,7 @@ else
     case {'bobyqa_last', 'bobyqa'}
         blacklist = [blacklist, {'STREG'}]; % bobyqa returns an fx that does not match x; should test it after the modernization.
         blacklist = [blacklist, {'ARGTRIGLS', 'BROWNAL', 'VARDIM'}];  % More than 10 minutes to solve.
-        blacklist = [blacklist, {'ARGLINB', 'ARGLINA', 'ARGLINC', 'PENALTY2'}];  % Takes too long
+        blacklist = [blacklist, {'ARGLINB', 'ARGLINA', 'ARGLINC', 'PENALTY2', 'SPIN2LS'}];  % Takes too long
     case {'lincoa_last', 'lincoa'}
         blacklist = [blacklist, {'GOFFIN'}];% This linear-equality constrained problem is strange; when lincoa solves it, x becomes so large (up to 10e16) that the constraint values evaluated by Fortran and matlab are substantially different. Seems to be due to rounding error. Not sure.
         blacklist = [blacklist, {'LSNNODOC', 'HS55', 'HEART6'}]; % possible reason for a segfault; should test it after the modernization.
