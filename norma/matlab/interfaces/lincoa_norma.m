@@ -365,8 +365,10 @@ else % The problem turns out 'normal' during preprima_norma
     % [Aineq, bineq] and [Aeq, beq].
     %A_aug = [-Alb; Aub; Aineq; Aeq; -Aeq]';
     %b_aug = [-lb(:); ub(:); bineq(:); beq(:); -beq(:)];
-    A_aug = [Aineq; -Aeq; Aeq; -Alb; Aub]';
-    b_aug = [bineq(:); -beq(:); beq(:); -lb(:); ub(:)];
+    %A_aug = [Aineq; -Aeq; Aeq; -Alb; Aub]';
+    %b_aug = [bineq(:); -beq(:); beq(:); -lb(:); ub(:)];
+    A_aug = [-Alb; Aub; -Aeq; Aeq; Aineq]';
+    b_aug = [-lb(:); ub(:); -beq(:); beq(:); bineq];
     if ~(isempty(A_aug) && isempty(b_aug)) && ~(size(A_aug,1) == n && size(A_aug,2) == length(b_aug))
         % Private/unexpected error
         error(sprintf('%s:InvalidAugLinCon', funname), '%s: UNEXPECTED ERROR: invalid augmented linear constraints.', funname);
