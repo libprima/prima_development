@@ -512,21 +512,24 @@ function [constr, m_nlcineq, m_nlceq] = cobyla_norma_con(x, Aineq, bineq, Aeq, b
 % The Fortran backend takes at input a constraint: constr(x) >= 0
 % m_nlcineq = number of nonlinear inequality constraints
 % m_nlceq = number of nonlinear equality constraints
-cineq = [lb(lb>-inf) - x(lb>-inf); x(ub<inf) - ub(ub<inf)];
+%cineq = [lb(lb>-inf) - x(lb>-inf); x(ub<inf) - ub(ub<inf)];
 ceq = [];
+cineq = [];
 if ~isempty(Aineq)
     cineq = [cineq; Aineq*x - bineq];
 end
 if ~isempty(Aeq)
     ceq = [ceq; Aeq*x - beq];
 end
-constr = [-cineq; ceq; -ceq];
+%constr = [-cineq; ceq; -ceq];
+constr = [x(lb>-inf) - lb(lb>-inf); ub(ub<inf) - x(ub<inf); ceq; -ceq; -cineq];
+
 if ~isempty(nonlcon)
     [nlcineq, nlceq, succ] = nonlcon(x); % Nonlinear constraints: nlcineq <= 0, nlceq = 0
     if succ
         m_nlcineq = length(nlcineq);
         m_nlceq = length(nlceq);
-        constr = [constr; -nlcineq; nlceq; -nlceq];
+        constr = [constr; nlceq; -nlceq; -nlcineq];
     else
         % Evaluation of nonlcon fails.
         % In this case, we pass a SCALAR NaN to the MEX gateway, which will handle it properly.
