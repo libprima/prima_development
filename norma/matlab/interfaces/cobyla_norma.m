@@ -464,11 +464,13 @@ else % The problem turns out 'normal' during preprima_norma
     output.constrviolation = constrviolation;
     output.chist = chist;
     if output_nlchist
-        output.nlcihist = -conhist(end-m_nlcineq-2*m_nlceq+1 : end-2*m_nlceq, :);
+        %output.nlcihist = -conhist(end-m_nlcineq-2*m_nlceq+1 : end-2*m_nlceq, :);
+        output.nlcihist = -conhist(end-m_nlcineq+1 : end, :);
         if isempty(output.nlcihist)
             output.nlcihist = []; % We uniformly use [] to represent empty objects
         end
-        output.nlcehist = -conhist(end-m_nlceq+1 : end, :);
+        %output.nlcehist = -conhist(end-m_nlceq+1 : end, :);
+        output.nlcehist = -conhist(end-m_nlceq-m_nlcineq+1 : end-m_nlcineq, :);
         if isempty(output.nlcehist)
             output.nlcehist = []; % We uniformly use [] to represent empty objects
         end
@@ -477,11 +479,13 @@ else % The problem turns out 'normal' during preprima_norma
     output.nlcineq = [];
     output.nlceq = [];
     if ~isempty(nonlcon)
-        output.nlcineq = -constr(end-m_nlcineq-2*m_nlceq+1 : end-2*m_nlceq);
+        %output.nlcineq = -constr(end-m_nlcineq-2*m_nlceq+1 : end-2*m_nlceq);
+        output.nlcineq = -constr(end-m_nlcineq+1 : end);
         if isempty(output.nlcineq)
             output.nlcineq = []; % We uniformly use [] to represent empty objects
         end
-        output.nlceq = -constr(end-m_nlceq+1 : end);
+        %output.nlceq = -constr(end-m_nlceq+1 : end);
+        output.nlceq = -constr(end-m_nlcineq-m_nlceq+1 : end-m_nlcineq);
         if isempty(output.nlceq)
             output.nlceq = []; % We uniformly use [] to represent empty objects
         end
