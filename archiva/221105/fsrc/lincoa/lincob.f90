@@ -17,7 +17,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, November 03, 2022 AM09:39:15
+! Last Modified: Sunday, July 16, 2023 AM12:22:19
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -166,7 +166,7 @@ integer(IK) :: idz, itest, &
 &           ngetact, subinfo
 real(RP) :: fshift(npt)
 real(RP) :: pqalt(npt), galt(size(x))
-real(RP) :: dnormsav(5)
+real(RP) :: dnormsav(5), fnew, fosav
 
 ! Sizes.
 m = int(size(bvec), kind(m))
@@ -200,7 +200,7 @@ end if
 
 !---------------------------------------------------------!
 if (cweight < 0) then
-    write (*, *) cweight  ! Temporary, to be removed.
+!write (*, *) cweight  ! Temporary, to be removed.
 end if
 !---------------------------------------------------------!
 
@@ -281,6 +281,8 @@ do while (.true.)
     delsav = delta
     ! Generate the next trust region step D by calling TRSTEP. Note that D is feasible.
     call trstep(amat, delta, gopt, hq, pq, rescon, xpt, iact, nact, qfac, rfac, ngetact, d)
+    !write (16, *) 'TRSTEP', delta, rescon, xpt, iact(1:nact), nact, qfac, rfac, ngetact, d
+!write (16, *) 'TRSTEP', delta, rescon, iact(1:nact), nact, ngetact, d
     dnorm = min(delta, sqrt(sum(d**2)))
 
     ! A trust region step is applied whenever its length is at least 0.5*DELTA. It is also
@@ -317,6 +319,7 @@ do while (.true.)
 
     ! When the trust region step is short, decide whether to improve the geometry of the
     ! interpolation set or to reduce RHO.
+!write (16, *) 321, ngetact, dnorm, rho, shortd, qred
     if (shortd .or. .not. qred > 0) then
         ! In this case, do nothing but reducing DELTA. Afterward, DELTA < DNORM may occur.
         ! N.B.: 1. This value of DELTA will be discarded if REDUCE_RHO turns out TRUE later.
@@ -326,8 +329,10 @@ do while (.true.)
         ! 3. The factor HALF works better than TENTH used in NEWUOA/BOBYQA.
         ! 4. The factor 1.4 below aligns with the update of DELTA after a trust-region step.
         delta = HALF * delta
+!write (16, *) 330, delta
         if (delta <= 1.4_RP * rho) then
             delta = rho
+!write (16, *) 333, delta
         end if
     else
         ! Calculate the next value of the objective function. The difference between the actual new
@@ -355,6 +360,7 @@ do while (.true.)
         cstrv = maximum([ZERO, constr])
 
         nf = nf + 1_IK
+!write (16, *) 'TRSTEP', nf, f, d, x
         call fmsg(solver, iprint, nf, f, x, cstrv, constr)
         call savehist(nf, x, xhist, f, fhist, cstrv, chist)
         if (is_nan(f) .or. is_posinf(f)) then
@@ -378,19 +384,27 @@ do while (.true.)
 
         ! Pick the next value of DELTA after a trust region step.
         !ratio = (fopt - f) / qred
+        fnew = f
+        fosav = fopt
         ratio = redrat(fopt - f, qred, eta1)  ! Needed? Or just take the ratio since QRED > 0?
+!write (16, *) '---', fopt - f, qred, ratio, dnorm, delta, rho
         if (ratio <= TENTH) then
+!write (16, *) 1
             delta = HALF * delta
         else if (ratio <= 0.7_RP) then
+!write (16, *) 2
             delta = max(HALF * delta, dnorm)
         else
+!write (16, *) 3
             temp = sqrt(TWO) * delta
             delta = max(HALF * delta, dnorm + dnorm)
             delta = min(delta, temp)  ! This does not exist in NEWUOA/BOBYQA. It works well.
         end if
         if (delta <= 1.4_RP * rho) then
+!write (16, *) 4
             delta = rho
         end if
+!write (16, *) delta, rho
         !if (delta <= 1.5_RP * rho) delta = rho  ! This is wrong!
         ! N.B.: The factor in the line above should be smaller than SQRT(2). Imagine a very
         ! successful step with DENORM = the un-updated DELTA = RHO. Then the scheme will
@@ -480,7 +494,10 @@ do while (.true.)
     close_itpset = all(distsq <= max(delta * delta, 4.0_RP * rho * rho))
     !----------------------------------------------------------------------------------------------!
 
-    bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)  ! BAD_TRSTEP for REDUCE_RHO
+    !bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= 0 .or. knew_tr == 0)  ! BAD_TRSTEP for REDUCE_RHO
+    bad_trstep = (shortd .or. (.not. qred > 0) .or. .not. (fnew < fosav) .or. knew_tr == 0)  ! BAD_TRSTEP for REDUCE_RHO
+    !write (16, *) qred, ratio, knew_tr, distsq, small_trrad
+    !write (16, *) shortd, accurate_mod, bad_trstep, close_itpset, small_trrad
     reduce_rho = (shortd .and. accurate_mod) .or. (bad_trstep .and. close_itpset .and. small_trrad)
 
     bad_trstep = (shortd .or. (.not. qred > 0) .or. ratio <= TENTH .or. knew_tr == 0)  ! BAD_TRSTEP for IMPROVE_GEO
@@ -548,6 +565,7 @@ do while (.true.)
         constr = matprod(x, A_orig) - b_orig
         cstrv = maximum([ZERO, constr])
         nf = nf + 1_IK
+!write (16, *) 'GESTEP', nf, f, x
 
         call fmsg(solver, iprint, nf, f, x, cstrv, constr)
         call savehist(nf, x, xhist, f, fhist, cstrv, chist)
@@ -630,6 +648,7 @@ do while (.true.)
     end if
 
     ! The calculations with the current value of RHO are complete. Pick the next value of RHO.
+!write (16, *) 645, rho, rhoend, delta
     if (reduce_rho) then
         if (rho <= rhoend) then
             info = SMALL_TR_RADIUS
@@ -646,6 +665,7 @@ do while (.true.)
         delta = max(delta, rho)
         dnormsav = HUGENUM
     end if
+!write (16, *) 661, rho, rhoend, delta
 end do
 
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried before.
