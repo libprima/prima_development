@@ -411,7 +411,8 @@ elseif ~strcmp(invoker, 'prima_norma') && probinfo.feasibility_problem && ~strcm
     end
 else % The problem turns out 'normal' during preprima_norma
     % Include all the constraints into one single 'nonlinear constraint'
-    funcon = @(x) cobyla_norma_funcon(x, fun, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
+    %funcon = @(x) cobyla_norma_funcon(x, fun, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
+    funcon = @(x) cobyla_funcon(x, fun, nonlcon);
     % Detect the number of the constraints (required by the Fortran code)
     [f_x0, constr_x0, m_nlcineq, m_nlceq] = funcon(x0);
     % m_nlcineq: number of nonlinear inequality constraints
@@ -437,10 +438,15 @@ else % The problem turns out 'normal' during preprima_norma
     % The mexified Fortran Function is a private function generating only private errors;
     % however, public errors can occur due to, e.g., evalobj; error handling needed.
     try
+        funcon_norma = @(x) cobyla_norma_funcon(x, fun, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
         [x, fx, constrviolation, constr, exitflag, nf, xhist, fhist, chist, conhist] = ...
-            fsolver(funcon, x0, f_x0, constr_x0, rhobeg, rhoend, eta1, eta2, gamma1, gamma2, ...
-            ftarget, ctol, cweight, maxfun, iprint, maxhist, double(output_xhist), ...
-            double(output_nlchist), maxfilt);
+            fsolver(funcon, x0, f_x0, constr_x0, Aineq, bineq, Aeq, beq, lb, ub, rhobeg, rhoend, ...
+            eta1, eta2, gamma1, gamma2, ftarget, ctol, cweight, maxfun, iprint, maxhist, ...
+            double(output_xhist), double(output_nlchist), maxfilt, funcon_norma);
+        %[x, fx, constrviolation, constr, exitflag, nf, xhist, fhist, chist, conhist] = ...
+        %    fsolver(funcon, x0, f_x0, constr_x0, rhobeg, rhoend, eta1, eta2, gamma1, gamma2, ...
+        %    ftarget, ctol, cweight, maxfun, iprint, maxhist, double(output_xhist), ...
+        %    double(output_nlchist), maxfilt);
         % Fortran MEX does not provide an API for reading Boolean variables. So we convert
         % output_xhist and output_nlchist to doubles (0 or 1) before passing them to the MEX gateway.
         % In C MEX, however, we have mxGetLogicals.
@@ -507,6 +513,35 @@ end
 return
 
 %%%%%%%%%%%%%%%%%%%%%%%%% Auxiliary functions %%%%%%%%%%%%%%%%%%%%%
+function [f, constr, m_nlcineq, m_nlceq] = cobyla_funcon(x, fun, nonlcon)
+% This function wraps fun and nonlcon into a single function handle, which will be passed to
+% the Fortran backend.
+% The nonlinear constraint expected by the Fortran backend: constr(x) >= 0
+% m_nlcineq is the number of nonlinear inequality constraints
+% m_nlceq is the number of nonlinear equality constraints
+f = fun(x);
+if ~isempty(nonlcon)
+    [nlcineq, nlceq, succ] = nonlcon(x); % Nonlinear constraints: nlcineq <= 0, nlceq = 0
+    if succ
+        m_nlcineq = length(nlcineq);
+        m_nlceq = length(nlceq);
+        constr = [nlceq; -nlceq; -nlcineq];
+    else
+        % Evaluation of nonlcon fails.
+        % In this case, we pass a SCALAR NaN to the MEX gateway, which will handle it properly.
+        % Ideally, we should return an NaN vector with proper size, but the size is unknown here.
+        m_nlcineq = NaN;
+        m_nlceq = NaN;
+        constr = NaN;
+    end
+else
+    m_nlcineq = 0;
+    m_nlceq = 0;
+    constr = [];
+end
+return
+
+%%%%%%%%%%%%%%%%%%%%%%%%% Auxiliary functions %%%%%%%%%%%%%%%%%%%%%
 function [f, constr, m_nlcineq, m_nlceq] = cobyla_norma_funcon(x, fun, Aineq, bineq, Aeq, beq, lb, ub, nonlcon)
 f = fun(x);
 [constr, m_nlcineq, m_nlceq] = cobyla_norma_con(x, Aineq, bineq, Aeq, beq, lb, ub, nonlcon);
@@ -527,7 +562,6 @@ if ~isempty(Aeq)
 end
 %constr = [-cineq; ceq; -ceq];
 constr = [x(lb>-inf) - lb(lb>-inf); ub(ub<inf) - x(ub<inf); ceq; -ceq; -cineq];
-
 if ~isempty(nonlcon)
     [nlcineq, nlceq, succ] = nonlcon(x); % Nonlinear constraints: nlcineq <= 0, nlceq = 0
     if succ

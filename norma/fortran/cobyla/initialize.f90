@@ -8,7 +8,7 @@ module initialize_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Sunday, June 11, 2023 PM05:39:46
+! Last Modified: Thursday, July 20, 2023 AM09:03:34
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -159,6 +159,7 @@ do k = 1, n + 1_IK
         j = k - 1_IK
         x(j) = x(j) + rhobeg
         call evaluate(calcfc, x, f, constr, cstrv)
+        cstrv = maxval([ZERO, -constr])
     end if
 
     ! Print a message about the function/constraint evaluation according to IPRINT.
