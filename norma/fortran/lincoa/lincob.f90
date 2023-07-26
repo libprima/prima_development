@@ -15,7 +15,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, June 13, 2023 AM01:03:05
+! Last Modified: Wednesday, July 26, 2023 AM10:18:10
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -472,7 +472,8 @@ do tr = 1, maxtr
     ! CLOSE_ITPSET: Are the interpolation points close to XOPT?
     distsq = sum((xpt - spread(xpt(:, kopt), dim=2, ncopies=npt))**2, dim=1)
     !!MATLAB: distsq = sum((xpt - xpt(:, kopt)).^2)  % Implicit expansion
-    close_itpset = all(distsq <= 4.0_RP * delta**2)  ! Behaves the same as Powell's version.
+    close_itpset = all(distsq <= max(delta**2, (10.0_RP * rho)**2))  ! Powell's code.
+    !close_itpset = all(distsq <= 4.0_RP * delta**2)  ! Behaves the same as Powell's version.
     ! Below are some alternative definitions of CLOSE_ITPSET.
     ! !close_itpset = all(distsq <= max(delta**2, 4.0_RP * rho**2))  ! Powell's code.
     ! !close_itpset = all(distsq <= delta**2)  ! Does not work as well as Powell's version.
