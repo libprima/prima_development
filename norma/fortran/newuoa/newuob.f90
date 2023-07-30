@@ -8,7 +8,7 @@ module newuob_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Friday, July 28, 2023 PM05:10:15
+! Last Modified: Monday, July 31, 2023 AM06:52:08
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -492,9 +492,9 @@ do tr = 1, maxtr
         ! Set DELBAR, which will be used as the trust-region radius for the geometry-improving
         ! scheme GEOSTEP. Note that DELTA has been updated before arriving here. See the comments
         ! above the definition of IMPROVE_GEO.
-        !delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
+        delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
         !delbar = max(TENTH * delta, rho)  ! Powell's LINCOA code
-        delbar = rho
+        !delbar = rho
 
         ! Find D so that the geometry of XPT will be improved when XPT(:, KNEW_GEO) becomes XOPT + D.
         ! The GEOSTEP subroutine will call Powell's BIGLAG and BIGDEN.

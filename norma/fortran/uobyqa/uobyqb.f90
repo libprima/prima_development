@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, July 28, 2023 PM05:09:50
+! Last Modified: Monday, July 31, 2023 AM06:52:39
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -385,8 +385,8 @@ do tr = 1, maxtr
         ! Powell's UOBYQA code sets DELBAR = RHO, but NEWUOA/BOBYQA/LINCOA all take DELTA and/or
         ! DISTSQ into consideration. The following DELBAR is copied from NEWUOA, and it seems to
         ! improve the performance slightly according to a test on 20220720.
-        !delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
-        delbar = rho
+        delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
+        !delbar = rho
 
         d = geostep(knew_geo, kopt, delbar, pl, xpt)
 

@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, July 30, 2023 PM06:53:53
+! Last Modified: Monday, July 31, 2023 AM06:52:23
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -461,8 +461,8 @@ do tr = 1, maxtr
     if (improve_geo) then
         ! XPT(:, KNEW_GEO) will become XOPT + D below. KNEW_GEO /= KOPT unless there is a bug.
         knew_geo = int(maxloc(distsq, dim=1), kind(knew_geo))
-        !delbar = max(min(TENTH * sqrt(maxval(distsq)), delta), rho)
-        delbar = max(HALF * delta, rho)
+        delbar = max(min(TENTH * sqrt(maxval(distsq)), delta), rho)
+        !delbar = max(HALF * delta, rho)
 
         ! Find D so that the geometry of XPT will be improved when XPT(:, KNEW_GEO) becomes XOPT + D.
         d = geostep(knew_geo, kopt, bmat, delbar, sl, su, xpt, zmat)
