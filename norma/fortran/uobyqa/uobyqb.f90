@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, June 13, 2023 AM01:04:34
+! Last Modified: Friday, July 28, 2023 PM05:09:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -199,7 +199,7 @@ knew_geo = 0
 ! Then TRRAD will update DELTA to GAMMA2*RHO. If GAMMA3 >= GAMMA2, then DELTA will be reset to RHO,
 ! which is not reasonable as D is very successful. See paragraph two of Sec. 5.2.5 in
 ! T. M. Ragonneau's thesis: "Model-Based Derivative-Free Optimization Methods and Software".
-! According to test on 20230613, for UOBYQA, this Powellful updating scheme of DELTA works better 
+! According to test on 20230613, for UOBYQA, this Powellful updating scheme of DELTA works better
 ! than setting directly DELTA = MAX(NEW_DELTA, RHO).
 gamma3 = max(ONE, min(0.75_RP * gamma2, 1.5_RP))
 
@@ -385,7 +385,8 @@ do tr = 1, maxtr
         ! Powell's UOBYQA code sets DELBAR = RHO, but NEWUOA/BOBYQA/LINCOA all take DELTA and/or
         ! DISTSQ into consideration. The following DELBAR is copied from NEWUOA, and it seems to
         ! improve the performance slightly according to a test on 20220720.
-        delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
+        !delbar = max(min(TENTH * sqrt(maxval(distsq)), HALF * delta), rho)
+        delbar = rho
 
         d = geostep(knew_geo, kopt, delbar, pl, xpt)
 
