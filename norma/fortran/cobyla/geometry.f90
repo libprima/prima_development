@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Thursday, July 20, 2023 AM11:37:02
+! Last Modified: Thursday, August 03, 2023 AM10:07:16
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -448,7 +448,8 @@ A(:, 1:size(bvec)) = -amat
 A(:, m + 1) = matprod(fval(n + 1) - fval(1:n), simi)
 cvmaxp = maxval([ZERO, -matprod(d, A(:, 1:m)) - conmat(:, n + 1)])
 cvmaxn = maxval([ZERO, matprod(d, A(:, 1:m)) - conmat(:, n + 1)])
-if (TWO * inprod(d, A(:, m + 1)) < cpen * (cvmaxp - cvmaxn)) then
+!if (TWO * inprod(d, A(:, m + 1)) < cpen * (cvmaxp - cvmaxn)) then
+if (inprod(d, A(:, m + 1)) + cpen * cvmaxn < -inprod(d, A(:, m + 1)) + cpen * cvmaxp) then
     d = -d
 end if
 
