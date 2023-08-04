@@ -59,6 +59,35 @@ else
     verbose_option = '-silent';
 end
 
+% Modify the compiler options by revising FFLAGS or COMPFLAGS.
+% See https://www.mathworks.com/help/matlab/ref/mex.html
+% We force the Fortran compiler to allocate arrays on the heap instead of the stack. Otherwise,
+% the solvers will encounter stack overflow when the problem size is large. As of gfortran 12.0,
+% `-fno-stack-arrays` is indeed the default, and we specify it for safety; as of Intel oneAPI
+% 2023.1.0, `-no-heap-arrays` is the default, so we must specify `-heap-arrays`.
+% N.B.: We assume that the function evaluation is much more expensive than the memory allocation,
+% so the performance loss due to the heap allocation is negligible. This is true for derivative-free
+% optimization, but may not be true for optimization with derivatives.
+compiler_configurations = mex.getCompilerConfigurations('fortran', 'selected');
+if contains(compiler_configurations.Manufacturer, 'gnu', 'IgnoreCase', true)  % gfortran
+    extra_compiler_options = '-fno-stack-arrays';
+elseif contains(compiler_configurations.Manufacturer, 'intel', 'IgnoreCase', true)  % Intel compiler
+    if ispc
+        extra_compiler_options = '/heap-arrays';
+    else
+        extra_compiler_options = '-heap-arrays';
+    end
+else
+    warning('prima_norma:UnrecognizedCompiler', 'Unrecognized compiler %s. The package may not work.', ...
+        compiler_configurations.Name);
+    extra_compiler_options = '';
+end
+if ispc  % Windows
+    compiler_options = ['COMPFLAGS="$COMPFLAGS ', extra_compiler_options, '"'];
+else
+    compiler_options = ['FFLAGS="$FFLAGS ', extra_compiler_options, '"'];
+end
+
 % Name of the file that contains the list of Fortran files. There should be such a file in each
 % Fortran source code directory, and the list should indicate the dependence among the files.
 filelist = 'ffiles.txt';
@@ -86,7 +115,8 @@ copyfile(header_file, header_file_bak);
 
 fprintf('Compiling the common files ... ');
 for idbg = 1 : length(debug_flags)
-    mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+    %mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+    mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})], compiler_options};
     for iprc = 1 : length(precisions)
         prepare_header(header_file, precisions{iprc}, debug_flags{idbg});
         work_dir = fullfile(common, pdstr(precisions{iprc}, debug_flags{idbg}));
@@ -126,7 +156,8 @@ for isol = 1 : length(solvers)
                 % The support for the classical variant is limited. No debugging version.
                 continue
             end
-            mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+            %mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+            mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})], compiler_options};
             for iprc = 1 : length(precisions)
                 work_dir = fullfile(soldir, pdstr(precisions{iprc}, debug_flags{idbg}));
                 prepare_work_dir(work_dir);
