@@ -39,7 +39,7 @@ module linalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, July 16, 2023 PM11:51:27
+! Last Modified: Thursday, August 10, 2023 AM12:38:23
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -1510,7 +1510,7 @@ function hypotenuse(x1, x2) result(r)
 !--------------------------------------------------------------------------------------------------!
 ! HYPOTENUSE(X1, X2) returns SQRT(X1^2 + X2^2), handling over/underflow.
 !--------------------------------------------------------------------------------------------------!
-use, non_intrinsic :: consts_mod, only : RP, ONE, ZERO, DEBUGGING
+use, non_intrinsic :: consts_mod, only : RP, ONE, ZERO, DEBUGGING, REALMAX, REALMIN
 use, non_intrinsic :: debug_mod, only : assert
 use, non_intrinsic :: infnan_mod, only : is_finite, is_nan
 implicit none
@@ -1535,21 +1535,21 @@ elseif (.not. is_finite(x2)) then
 else
     y = abs([x1, x2])
     y = [minval(y), maxval(y)]
-    !if (y(1) > sqrt(REALMIN) .and. y(2) < sqrt(REALMAX / 2.1_RP)) then
-    !    r = sqrt(sum(y**2))
-    !elseif (y(2) > 0) then
-    !    r = max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE))
-    !    ! Without MAX, R < Y(2) may happen due to rounding errors.
-    !else
-    !    r = ZERO
-    !end if
-    ! Scaling seems to be good in general.
-    if (y(2) > 0) then
-        r = maxval([abs(y(1)), y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)])
-        ! Without MAXVAL, R < Y(2) may happen due to rounding errors.
+    if (y(1) > sqrt(REALMIN) .and. y(2) < sqrt(REALMAX / 2.1_RP)) then
+        r = sqrt(sum(y**2))
+    elseif (y(2) > 0) then
+        r = max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE))
+        ! Without MAX, R < Y(2) may happen due to rounding errors.
     else
         r = ZERO
     end if
+    !! Scaling seems to be good in general.
+    !if (y(2) > 0) then
+    !    r = maxval([abs(y(1)), y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)])
+    !    ! Without MAXVAL, R < Y(2) may happen due to rounding errors.
+    !else
+    !    r = ZERO
+    !end if
 end if
 
 !====================!
