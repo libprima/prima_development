@@ -1,5 +1,4 @@
-*.pdf
-*.eps
+README*.pdf
 
 # Byte-compiled / optimized / DLL files
 trash/
@@ -9,6 +8,7 @@ __pycache__/
 
 # misc files for testing
 matlab/tests/testdata/
+*.mat
 core
 core.*
 *.cmdx
@@ -19,11 +19,16 @@ core.*
 *.mod
 *__genmod.f90
 flang_unparsed_file*.*90
+main
 *.o
 *.out
 *.output
 *.pyd
 *.so
+*.udb
+*.ilm
+*.lst
+*.cmod
 *.stb
 *NSConflict*
 *_output.txt
@@ -35,16 +40,24 @@ test.lincoa/
 testdata/
 bak/
 *_test
-*_tst
-*_tst_bobyqa
-*_tst_cobyla
-*_tst_lincoa
-*_tst_newuoa
-*_tst_uobyqa
+*_tst*
 *log
-NEWUOA_output.txt
-fort.*
 log*
+1
+2
+3
+9test
+atest
+dtest
+ftest
+gtest
+itest
+ntest
+rtest
+stest
+vtest
+xtest
+fort.*
 log/
 mlog/
 flog/
