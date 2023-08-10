@@ -1536,9 +1536,9 @@ else
     y = abs([x1, x2])
     y = [minval(y), maxval(y)]
     if (y(1) > sqrt(REALMIN) .and. y(2) < sqrt(REALMAX / 2.1_RP)) then
-        r = sqrt(sum(y**2))
+        r = min(max(y(2), sqrt(sum(y**2))), sum(y))
     elseif (y(2) > 0) then
-        r = max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE))
+        r = min(max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)), sum(y))
         ! Without MAX, R < Y(2) may happen due to rounding errors.
     else
         r = ZERO
