@@ -21,7 +21,7 @@ module powalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Thursday, August 10, 2023 AM12:39:28
+! Last Modified: Sunday, August 13, 2023 AM11:16:19
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -484,9 +484,9 @@ end if
 ! R are all positive if it is the case for the original R.
 do k = i, n - 1_IK
     G = planerot(R([k + 1_IK, k], k + 1))  ! G = [c, -s; s, c]. It improves the performance of LINCOA
-    !hypt = sqrt(R(k, k + 1)**2 + R(k + 1, k + 1)**2)  ! HYPT must be calculated before R is updated
+    hypt = sqrt(R(k, k + 1)**2 + R(k + 1, k + 1)**2)  ! HYPT must be calculated before R is updated
     ! !HYPT = G(1, 1) * R(K + 1, K + 1) + G(1, 2) * R(K, K + 1)  ! Does not perform well on 20220312
-    hypt = hypotenuse(R(k + 1, k + 1), R(k, k + 1))  ! Does not perform well on 20220312
+    !hypt = hypotenuse(R(k + 1, k + 1), R(k, k + 1))  ! Does not perform well on 20220312
 
     ! Update Q(:, [K, K+1]).
     Q(:, [k, k + 1_IK]) = matprod(Q(:, [k + 1_IK, k]), transpose(G))

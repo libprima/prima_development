@@ -39,7 +39,7 @@ module linalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, August 13, 2023 AM12:22:01
+! Last Modified: Sunday, August 13, 2023 AM12:42:13
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -1534,24 +1534,23 @@ elseif (.not. is_finite(x2)) then
     r = abs(x2)
 else
     y = abs([x1, x2])
-    !y = [minval(y), maxval(y)]
-    r = sqrt(sum(y**2))
-    r = min(sum(y), maxval([y, r]))
-    !if (y(1) > sqrt(REALMIN) .and. y(2) < sqrt(REALMAX / 2.1_RP)) then
-    !    r = min(max(y(2), sqrt(sum(y**2))), sum(y))
-    !elseif (y(2) > 0) then
-    !    r = min(max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)), sum(y))
-    !    ! Without MAX, R < Y(2) may happen due to rounding errors.
+    !r = sqrt(sum(y**2)) ; r = min(sum(y), maxval([y, r]))
+    y = [minval(y), maxval(y)]
+    if (y(1) > sqrt(REALMIN) .and. y(2) < sqrt(REALMAX / 2.1_RP)) then
+        r = min(max(y(2), sqrt(sum(y**2))), sum(y))
+    elseif (y(2) > 0) then
+        r = min(max(y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)), sum(y))
+        ! Without MAX, R < Y(2) may happen due to rounding errors.
+    else
+        r = ZERO
+    end if
+    !! Scaling seems to be good in general.
+    !if (y(2) > 0) then
+    !    r = maxval([abs(y(1)), y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)])
+    !    ! Without MAXVAL, R < Y(2) may happen due to rounding errors.
     !else
     !    r = ZERO
     !end if
-    !!! Scaling seems to be good in general.
-    !!if (y(2) > 0) then
-    !!    r = maxval([abs(y(1)), y(2), y(2) * sqrt((y(1) / y(2))**2 + ONE)])
-    !!    ! Without MAXVAL, R < Y(2) may happen due to rounding errors.
-    !!else
-    !!    r = ZERO
-    !!end if
 end if
 
 !====================!
