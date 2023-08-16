@@ -7,3 +7,8 @@ development of the new version. "norma" is the Latin word for "standard".
 archiva: a directory containing a collection of archived versions of the project, each of which
 is a snapshot of the project together with the corresponding "norma" version. "archiva" is the
 Latin word for "archives".
+
+Mirrors:
+- Gitee: https://gitee.com/libprima/prima_development
+- GitHub: https://github.com/libprima/prima_development
+- GitLab: https://gitlab.com/libprima/prima_development
