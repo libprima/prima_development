@@ -12,7 +12,7 @@ module getact_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, February 14, 2023 AM12:13:14
+! Last Modified: Friday, August 25, 2023 AM12:59:21
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -174,7 +174,9 @@ vlam = ZERO
 do icon = nact, 1, -1
     if (resact(icon) > tdel) then
         ! Delete constraint IACT(ICON) from the active set, and set NACT = NACT - 1.
+!        write (*, *) icon, 'brfac', nact, rfac(1:nact, 1:nact)
         call delact(icon, iact, nact, qfac, resact, resnew, rfac, vlam)
+!        write (*, *) icon, 'arfac', nact, rfac(1:nact, 1:nact)
     end if
 end do
 
@@ -188,7 +190,9 @@ do while (nact > 0)
     end if
     icon = maxval(trueloc(vlam(1:nact) >= 0))
     !!MATLAB: icon = max(find(vlam(1:nact) >= 0)); % OR: icon = find(vlam(1:nact) >= 0, 1, 'last')
+!    write (*, *) 'brfac', nact, rfac(1:nact, 1:nact)
     call delact(icon, iact, nact, qfac, resact, resnew, rfac, vlam)
+!    write (*, *) 'arfac', nact, rfac(1:nact, 1:nact)
 end do
 ! Zaikun 20220330: What if NACT = 0 at this point?
 
@@ -234,7 +238,8 @@ do iter = 1, maxiter
     dd = inprod(psd, psd)
     dnorm = sqrt(dd)
 
-    if (dd <= 0) then
+    !if (dd <= 0) then
+    if (.not. dnorm > EPS) then
         exit
     end if
 
@@ -290,12 +295,18 @@ do iter = 1, maxiter
     ! 3. CAUTION: the Inf-norm of APSD(IACT(1:NACT)) is NOT always MAXVAL(ABS(APSD(IACT(1:NACT)))),
     ! as the latter returns -HUGE(APSD) instead of 0 when NACT = 0! In MATLAB, max([]) = []; in
     ! Python, R, and Julia, the maximum of an empty array raises errors/warnings (as of 20220318).
-    if (all(.not. mask) .or. violmx <= min(0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
+    !if (all(.not. mask) .or. violmx <= max(EPS, min(0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf')))) then
+    !write (*, *) 'violmx', violmx, 0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf')
+    !if (all(.not. mask) .or. violmx <= min(0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
+    if (all(.not. mask) .or. violmx <= max(EPS * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
+        !if (all(.not. mask) .or. violmx <= max(0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
         exit
     end if
 
     ! Add constraint L to the active set. ADD_ACT sets NACT = NACT + 1 and VLAM(NACT) = 0.
+!    write (*, *) 'B', l, n, nact, size(amat, 1), amat(:, l), qfac!, rfac(1:nact, 1:nact)
     call addact(l, amat(:, l), iact, nact, qfac, resact, resnew, rfac, vlam)
+!    write (*, *) 'A', nact, rfac(1:nact, 1:nact)
 
     ! Set the components of the vector VMU if VIOLMX is positive.
     ! N.B.: 1. In theory, NACT > 0 is not needed in the condition below, because VIOLMX must be 0

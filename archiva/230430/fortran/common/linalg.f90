@@ -39,7 +39,7 @@ module linalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Monday, April 10, 2023 PM03:23:39
+! Last Modified: Friday, August 25, 2023 AM12:34:58
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -654,7 +654,7 @@ if (n <= 0) then ! Of course, N < 0 should never happen.
 end if
 
 ! Zaikun 20220527: With the following code, the classic flang 15.0.3, Huawei Bisheng flang 1.3.3,
-! NVIDIA nvfortran 23.1, and AOCC 4.0.0 flang, and Arm Fortran Compiler version 22.1 raise a false
+! NVIDIA nvfortran 23.1, AOCC 4.0.0 flang, and Arm Fortran Compiler version 22.1 raise a false
 ! positive error of out-bound subscripts when invoked with the -Mbounds flag.
 ! See https://github.com/flang-compiler/flang/issues/1238
 if (istril(A)) then
@@ -684,6 +684,12 @@ if (DEBUGGING) then
     call assert(size(x) == size(A, 2), 'SIZE(X) == SIZE(A, 2)', srname)
     if (is_finite(sum(abs(A)) + sum(abs(b)))) then
         tol = max(1.0E-8_RP, min(1.0E-1_RP, 1.0E8_RP * EPS * real(n + 1_IK, RP)))
+        !write (*, *) 'tol', tol
+        !write (*, *) 'A', A
+        !write (*, *) 'x', x
+        !write (*, *) 'A*x', matprod(A, x)
+        !write (*, *) 'b', b
+        !write (*, *) 'norm(A*x - b)', norm(matprod(A, x) - b), 'norm(b)', norm(b), 'norm(x)', norm(x)
         call assert(norm(matprod(A, x) - b) <= tol * maxval([ONE, norm(b), norm(x)]), 'A*X == B', srname)
     end if
 end if

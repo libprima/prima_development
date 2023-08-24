@@ -21,7 +21,7 @@ module powalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Tuesday, May 30, 2023 PM02:30:02
+! Last Modified: Friday, August 25, 2023 AM12:35:32
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -204,7 +204,7 @@ subroutine qradd_Rfull(c, Q, R, n)  ! Used in LINCOA
 !--------------------------------------------------------------------------------------------------!
 use, non_intrinsic :: consts_mod, only : RP, IK, EPS, DEBUGGING
 use, non_intrinsic :: debug_mod, only : assert
-use, non_intrinsic :: linalg_mod, only : matprod, planerot, isorth, istriu
+use, non_intrinsic :: linalg_mod, only : matprod, planerot, isorth, istriu, diag
 implicit none
 
 ! Inputs
@@ -237,6 +237,7 @@ if (DEBUGGING) then
     call assert(size(Q, 1) == m .and. size(Q, 2) == m, 'SIZE(Q) = [M, M]', srname)
     call assert(size(Q, 2) == size(R, 1), 'SIZE(Q, 2) == SIZE(R, 1)', srname)
     call assert(size(R, 2) >= n + 1 .and. size(R, 2) <= m, 'N+1 <= SIZE(R, 2) <= M', srname)
+    call assert(all(diag(R(:, 1:n)) > 0), 'DIAG(R(:, 1:N)) > 0', srname)
     tol = max(1.0E-8_RP, min(1.0E-1_RP, 1.0E8_RP * EPS * real(m + 1_IK, RP)))
     call assert(isorth(Q, tol), 'The columns of Q are orthogonal', srname)
     call assert(istriu(R), 'R is upper triangular', srname)
@@ -246,6 +247,9 @@ if (DEBUGGING) then
 end if
 
 cq = matprod(c, Q)
+!write (*, *) 'c = ', c
+!write (*, *) 'Q = ', Q
+!write (*, *) 'cq0 = ', cq(1:m), cq(1:m) == 0.0_RP
 
 ! Update Q so that the columns of Q(:, N+2:M) are orthogonal to C. This is done by applying a 2D
 ! Givens rotation to Q(:, [K, K+1]) from the right to zero C'*Q(:, K+1) out for K = N+1, ..., M-1.
@@ -257,6 +261,8 @@ do k = m - 1_IK, n + 1_IK, -1
         cq(k) = sqrt(cq(k)**2 + cq(k + 1)**2)
     end if
 end do
+!write (*, *) 'cq = ', cq(1:m), cq(1:m) == 0.0_RP
+!write (*, *) 'cqq = ', matprod(c, Q(:, 1:m)), cq(1:m) == 0.0_RP
 
 R(1:n, n + 1) = matprod(c, Q(:, 1:n))
 
@@ -273,6 +279,7 @@ if (DEBUGGING) then
     call assert(size(Q, 1) == m .and. size(Q, 2) == m, 'SIZE(Q) = [M, M]', srname)
     call assert(size(Q, 2) == size(R, 1), 'SIZE(Q, 2) == SIZE(R, 1)', srname)
     call assert(size(R, 2) >= n .and. size(R, 2) <= m, 'N <= SIZE(R, 2) <= M', srname)
+    call assert(all(diag(R(:, 1:n)) > 0), 'DIAG(R(:, 1:N)) > 0', srname)
     call assert(isorth(Q, tol), 'The columns of Q are orthogonal', srname)
     call assert(istriu(R), 'R is upper triangular', srname)
 
@@ -422,7 +429,7 @@ subroutine qrexc_Rfull(Q, R, i)  ! Used in LINCOA
 !--------------------------------------------------------------------------------------------------!
 use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, EPS, DEBUGGING
 use, non_intrinsic :: debug_mod, only : assert
-use, non_intrinsic :: linalg_mod, only : matprod, planerot, isorth, istriu
+use, non_intrinsic :: linalg_mod, only : matprod, planerot, isorth, istriu, diag
 implicit none
 
 ! Inputs
@@ -457,6 +464,7 @@ if (DEBUGGING) then
     call assert(size(Q, 2) == size(R, 1), 'SIZE(Q, 2) == SIZE(R, 1)', srname)
     call assert(size(Q, 2) >= n .and. size(Q, 2) <= m, 'N <= SIZE(Q, 2) <= M', srname)
     call assert(size(R, 1) >= n .and. size(R, 1) <= m, 'N <= SIZE(R, 1) <= M', srname)
+    call assert(all(diag(R(:, 1:n)) > 0), 'DIAG(R(:, 1:N)) > 0', srname)
     tol = max(1.0E-8_RP, min(1.0E-1_RP, 1.0E8_RP * EPS * real(m + 1_IK, RP)))
     call assert(isorth(Q, tol), 'The columns of Q are orthogonal', srname)
     call assert(istriu(R), 'R is upper triangular', srname)
@@ -530,6 +538,7 @@ if (DEBUGGING) then
     call assert(size(Q, 2) == size(R, 1), 'SIZE(Q, 2) == SIZE(R, 1)', srname)
     call assert(size(Q, 2) >= n .and. size(Q, 2) <= m, 'N <= SIZE(Q, 2) <= M', srname)
     call assert(size(R, 1) >= n .and. size(R, 1) <= m, 'N <= SIZE(R, 1) <= M', srname)
+    call assert(all(diag(R(:, 1:n)) > 0), 'DIAG(R(:, 1:N)) > 0', srname)
     call assert(isorth(Q, tol), 'The columns of Q are orthogonal', srname)
     call assert(istriu(R), 'R is upper triangular', srname)
 

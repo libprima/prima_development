@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, July 19, 2023 PM04:07:52
+! Last Modified: Friday, August 25, 2023 AM12:27:59
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -427,7 +427,8 @@ if (nact > 0 .and. gnorm > EPS .and. is_finite(gnorm)) then
     cstrv = maximum([ZERO, matprod(pgstp, amat(:, trueloc(rstat == 1))) - rescon(trueloc(rstat == 1))])
     ! The purpose of CVTOL below is to provide a check on feasibility that includes a tolerance for
     ! contributions from computer rounding errors. Note that CVTOL equals 0 in precise arithmetic.
-    cvtol = min(0.01_RP * norm(pgstp), TEN * norm(matprod(pgstp, amat(:, iact(1:nact))), 'inf'))
+    !cvtol = min(0.01_RP * norm(pgstp), TEN * norm(matprod(pgstp, amat(:, iact(1:nact))), 'inf'))
+    cvtol = max(EPS * norm(pgstp), TEN * norm(matprod(pgstp, amat(:, iact(1:nact))), 'inf'))
     take_pgstp = .false.
     if (cstrv <= cvtol) then
         den = calden(kopt, bmat, pgstp, xpt, zmat, idz)  ! Indeed, only DEN(KNEW) is needed.
