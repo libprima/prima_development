@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, December 26, 2022 PM05:24:52
+! Last Modified: Sunday, August 27, 2023 PM09:31:06
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -192,6 +192,7 @@ xbdi = 0
 xbdi(trueloc(xopt >= su .and. gopt <= 0)) = 1
 xbdi(trueloc(xopt <= sl .and. gopt >= 0)) = -1
 nact = int(count(xbdi /= 0), kind(nact))
+!write (*, *) 195, xbdi, sl, su
 
 ! Initialized D and CRVMIN.
 d = ZERO
@@ -320,6 +321,7 @@ do iter = 1, maxiter
         stplen = sbound(iact)
         !!MATLAB: [stplen, iact] = min(sbound);
     end if
+    !write (*, *) 324, iact, stplen, sbound
     !----------------------------------------------------------------------------------------------!
     ! Alternatively, IACT and STPLEN can be calculated as below.
     ! !IACT = INT(MINLOC([STPLEN, SBOUND], DIM=1), KIND(IACT)) - 1_IK
@@ -356,6 +358,7 @@ do iter = 1, maxiter
         nact = nact + 1_IK
         call assert(abs(s(iact)) > 0, 'S(IACT) /= 0', srname)
         xbdi(iact) = nint(sign(ONE, s(iact)), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(s(iact))
+        !write (*, *) 360, xbdi
         ! Exit when NACT = N (NACT > N is impossible). We must update XBDI before exiting!
         if (nact >= n) then
             exit  ! This leads to a difference. Why?
@@ -417,6 +420,7 @@ do iter = 1, maxiter
     ! Update XBDI. It indicates whether the lower (-1) or upper bound (+1) is reached or not (0).
     xbdi(trueloc(xbdi == 0 .and. (xnew >= su))) = 1
     xbdi(trueloc(xbdi == 0 .and. (xnew <= sl))) = -1
+    !write (*, *) 422, xbdi
     nact = int(count(xbdi /= 0), kind(nact))
     if (nact >= n - 1) then
         exit
@@ -497,6 +501,7 @@ do iter = 1, maxiter
         hangt_bd = tanbd(iact)
         !!MATLAB: [hangt_bd, iact] = min(tanbd);
     end if
+    !write (*, *) 504, iact, hangt_bd, tanbd
     if (hangt_bd <= 0) then
         exit
     end if
@@ -522,7 +527,7 @@ do iter = 1, maxiter
         exit
     end if
 
-    ! Update GNEW, D and HDRED. If the angle of the alternative iteration is restricted by a bound
+    ! Update GNEW, D, and HDRED. If the angle of the alternative iteration is restricted by a bound
     ! on a free variable, that variable is fixed at the bound.
     cth = (ONE - hangt * hangt) / (ONE + hangt * hangt)
     sth = (hangt + hangt) / (ONE + hangt * hangt)
@@ -534,7 +539,13 @@ do iter = 1, maxiter
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.
-        xbdi(iact) = nint(sign(ONE, d(iact) - diact), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
+        !write (*, *), 538, d(iact), diact, xopt(iact) + d(iact), sl(iact), su(iact), HALF * (sl(iact) + su(iact))
+        !write (*, *), 539, d(iact) - diact, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))
+        !call assert(sign(ONE, d(iact) - diact) == sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), 's=s', srname)
+        !xbdi(iact) = nint(sign(ONE, d(iact) - diact), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
+        xbdi(iact) = nint(sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
+        !write (*, *) 540, iact, hangt, hangt_bd, d(iact), diact, xbdi(iact)
+        !write (*, *) 541, xbdi
     elseif (.not. sdec > ctest * qred) then
         exit
     end if
@@ -542,9 +553,12 @@ end do
 
 ! Set D, giving careful attention to the bounds.
 xnew = max(sl, min(su, xopt + d))
+!write (*, *) '-xnew = ', xnew, 'xopt = ', xopt, 'd = ', d
+!write (*, *), 'xbdi = ', xbdi, 'sl = ', sl, 'su = ', su
 xnew(trueloc(xbdi == -1)) = sl(trueloc(xbdi == -1))
 xnew(trueloc(xbdi == 1)) = su(trueloc(xbdi == 1))
 d = xnew - xopt
+!write (*, *) 'xnew = ', xnew, 'xopt = ', xopt, 'd = ', d
 
 ! Set CRVMIN to ZERO if it has never been set or becomes NaN due to ill conditioning.
 if (crvmin <= -HUGENUM .or. is_nan(crvmin)) then
@@ -564,6 +578,7 @@ end if
 if (DEBUGGING) then
     call assert(size(d) == n .and. all(is_finite(d)), 'SIZE(D) == N, D is finite', srname)
     ! Due to rounding, it may happen that |D| > DELTA, but |D| > 2*DELTA is highly improbable.
+    !write (*, *) 'DELTA = ', delta, ', |D| = ', norm(d), 'd = ', d
     call assert(norm(d) <= TWO * delta, '|D| <= 2*DELTA', srname)
     call assert(crvmin >= 0, 'CRVMIN >= 0', srname)
     ! D is supposed to satisfy the bound constraints SL <= XOPT + D <= SU.

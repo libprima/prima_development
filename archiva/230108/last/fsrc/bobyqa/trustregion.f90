@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, December 26, 2022 PM05:24:23
+! Last Modified: Sunday, August 27, 2023 PM09:37:11
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -501,7 +501,8 @@ do iter = 1, maxiter
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.
-        xbdi(iact) = int(sign(ONE, d(iact) - diact), IK)  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
+        !xbdi(iact) = int(sign(ONE, d(iact) - diact), IK)  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
+        xbdi(iact) = int(sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))))
     elseif (.not. sdec > ctest * qred) then
         exit
     end if
