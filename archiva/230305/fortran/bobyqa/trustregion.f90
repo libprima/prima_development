@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, August 27, 2023 PM09:51:44
+! Last Modified: Sunday, August 27, 2023 PM09:57:09
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -359,8 +359,6 @@ do iter = 1, maxiter
     if (iact > 0) then
         nact = nact + 1_IK
         call assert(abs(s(iact)) > 0, 'S(IACT) /= 0', srname)
-        call assert(sign(ONE, d(iact) - diact) == sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), &
-            & 'Two definitions of XBDI are identical', srname)
         xbdi(iact) = nint(sign(ONE, s(iact)), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(s(iact))
         ! Exit when NACT = N (NACT > N is impossible). We must update XBDI before exiting!
         if (nact >= n) then
@@ -540,6 +538,8 @@ do iter = 1, maxiter
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.
+        call assert(sign(ONE, d(iact) - diact) == sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), &
+            & 'Two definitions of XBDI are identical', srname)
         xbdi(iact) = nint(sign(ONE, d(iact) - diact), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
     elseif (.not. sdec > ctest * qred) then
         exit
