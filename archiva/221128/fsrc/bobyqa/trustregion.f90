@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, November 28, 2022 PM11:40:55
+! Last Modified: Sunday, August 27, 2023 PM09:54:21
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -146,7 +146,7 @@ end if
 !
 
 ! The initial values of IACT, DREDSQ, and GGSAV are unused but to entertain Fortran compilers.
-! TODO: Check that GGSAV has been initialized before used. 
+! TODO: Check that GGSAV has been initialized before used.
 iact = 0
 dredsq = ZERO
 ggsav = ZERO
@@ -480,6 +480,8 @@ do iter = 1, maxiter
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.
+        call assert(sign(ONE, d(iact) - diact) == sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), &
+            & 'Two definitions of XBDI are identical', srname)
         xbdi(iact) = int(sign(ONE, d(iact) - diact), IK)  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
     elseif (.not. sdec > ctest * qred) then
         exit

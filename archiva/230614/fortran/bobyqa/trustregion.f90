@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, June 03, 2023 PM01:30:43
+! Last Modified: Sunday, August 27, 2023 PM09:53:06
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -537,6 +537,8 @@ do iter = 1, maxiter
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.
+        call assert(sign(ONE, d(iact) - diact) == sign(ONE, xopt(iact) + d(iact) - HALF * (sl(iact) + su(iact))), &
+            & 'Two definitions of XBDI are identical', srname)
         xbdi(iact) = nint(sign(ONE, d(iact) - diact), kind(xbdi))  !!MATLAB: xbdi(iact) = sign(d(iact) - diact)
     elseif (.not. sdec > ctest * qred) then
         exit
