@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, May 29, 2023 PM06:53:11
+! Last Modified: Monday, August 28, 2023 AM07:16:16
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -277,7 +277,10 @@ if (gg > 0 .and. is_finite(gg)) then
 else ! GG is 0 or NaN due to rounding errors. Set DCAUCHY to a displacement from XOPT to XPT(:, KNEW).
     dcauchy = xpt(:, knew) - xopt
     scaling = delbar / norm(dcauchy)
-    dcauchy = max(0.6_RP * scaling, min(HALF, scaling)) * dcauchy
+    dcauchy = min(HALF, scaling) * dcauchy
+    if (inprod(g, dcauchy) * inprod(dcauchy, matprod(h, dcauchy)) < 0) then
+        dcauchy = -dcauchy
+    end if
 end if
 
 ! Return if H or G contains NaN or H is zero. Powell's code does not do this.
