@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, May 29, 2023 PM06:50:42
+! Last Modified: Monday, August 28, 2023 AM07:01:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -214,9 +214,11 @@ ghg = inprod(g, matprod(h, g))
 dcauchy = ZERO
 if (gg > 0 .and. is_finite(gg)) then
     dcauchy = (delbar / sqrt(gg)) * g
+!write (17, *) 259, ghg, dcauchy
     if (ghg < 0) then
         dcauchy = -dcauchy
     end if
+!write (17, *) 262, ghg, dcauchy
     !dcauchy(trueloc(is_nan(dcauchy))) = ZERO  ! DCAUCHY may contain NaN if the problem is ill-conditioned.
 end if
 
@@ -227,12 +229,14 @@ if (any(is_nan(dcauchy)) .or. .not. any(abs(dcauchy) > 0)) then
     dd = sum(dcauchy**2)
     !dcauchy = min(HALF, delbar / sqrt(dd)) * dcauchy
     dcauchy = max(0.6_RP * (delbar / sqrt(dd)), min(HALF, delbar / sqrt(dd))) * dcauchy
+!write (17, *) 266, dcauchy
     if (inprod(g, dcauchy) * inprod(dcauchy, matprod(h, dcauchy)) < 0) then
         dcauchy = -dcauchy
     end if
 end if
 
 if (is_nan(sum(abs(h)) + sum(abs(g))) .or. sum(abs(h)) <= 0) then
+!write (17, *) 270
     d = dcauchy
     return
 end if
@@ -281,6 +285,7 @@ dhd = inprod(d, matprod(h, d))
 
 ! Zaikun 20220504: GG and DD can become 0 at this point due to rounding. Detected by IFORT.
 if (.not. (gg > 0 .and. dd > 0)) then
+!write (17, *) 321, dcauchy
     d = dcauchy
     return
 end if
@@ -297,6 +302,7 @@ d = scaling * d
 gnorm = sqrt(gg)
 
 if (.not. (gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd)) then
+!write (17, *) 338
     !if (sum(d**2) <= 0) then
     !if (any(is_nan(d))) then
     if (.not. sum(abs(d)) > 0) then
@@ -375,6 +381,7 @@ d = tempd * d + tempv * v
 if (any(is_nan(d))) then
     d = dcauchy
 end if
+!write (17, *) 413
 
 !====================!
 !  Calculation ends  !

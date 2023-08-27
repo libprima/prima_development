@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, May 29, 2023 PM04:26:09
+! Last Modified: Monday, August 28, 2023 AM07:06:45
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -256,17 +256,24 @@ ghg = inprod(g, matprod(h, g))
 ! Calculate the Cauchy step as a backup. Powell's code does not have this, and D may be 0 or NaN.
 if (gg > 0 .and. is_finite(gg)) then
     dcauchy = (delbar / sqrt(gg)) * g
+!write (16, *) 259, ghg, dcauchy
     if (ghg < 0) then
         dcauchy = -dcauchy
     end if
+!write (16, *) 262, ghg, dcauchy
 else ! GG is 0 or not finite. Set DCAUCHY to a displacement from XOPT to XPT(:, KNEW).
     dcauchy = xpt(:, knew) - xopt
     scaling = delbar / sqrt(sum(dcauchy**2))
     dcauchy = max(0.6_RP * scaling, min(HALF, scaling)) * dcauchy
+!write (16, *) 266, dcauchy
+    if (inprod(g, dcauchy) * inprod(dcauchy, matprod(h, dcauchy)) < 0) then
+        dcauchy = -dcauchy
+    end if
 end if
 
 ! Return if H or G contains NaN or H is zero. Powell's code does not do this.
 if (is_nan(sum(abs(h)) + sum(abs(g))) .or. all(abs(h) <= 0)) then
+!write (16, *) 270
     d = dcauchy
     return
 end if
@@ -317,6 +324,7 @@ dhd = inprod(d, matprod(h, d))
 
 ! Zaikun 20220504: GG and DD can become 0 at this point due to rounding. Detected by IFORT.
 if (.not. (gg > 0 .and. dd > 0)) then
+!write (16, *) 321, dcauchy
     d = dcauchy
     return
 end if
@@ -333,6 +341,7 @@ gnorm = sqrt(gg)
 
 if (.not. (gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd)) then
     ! It may happen that D = 0 due to overflow in DD, which is used to define SCALING.
+!write (16, *) 338
     if (sum(abs(d)) <= 0 .or. is_nan(sum(abs(d)))) then
         d = dcauchy
     end if
@@ -407,6 +416,7 @@ d = tempd * d + tempv * v
 if (is_nan(sum(abs(d)))) then
     d = dcauchy
 end if
+!write (16, *) 413
 
 !====================!
 !  Calculation ends  !

@@ -11,7 +11,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, January 08, 2023 AM12:47:22
+! Last Modified: Monday, August 28, 2023 AM07:01:57
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -217,6 +217,7 @@ do while (.true.)
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write (17, *) 'tr', nf, f, d, x
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, iprint, nf, f, x)
@@ -367,6 +368,7 @@ do while (.true.)
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
         nf = nf + 1
+!write(17,*) 'geo', nf, f, d, x
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, iprint, nf, f, x)
