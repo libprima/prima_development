@@ -11,7 +11,7 @@ module getact_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, November 07, 2022 PM01:51:48
+! Last Modified: Monday, August 28, 2023 AM08:18:03
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -287,7 +287,7 @@ do iter = 1_IK, maxiter
     ! 3. CAUTION: the Inf-norm of APSD(IACT(1:NACT)) is NOT always MAXVAL(ABS(APSD(IACT(1:NACT)))),
     ! as the latter returns -HUGE(APSD) instead of 0 when NACT = 0! In MATLAB, max([]) = []; in
     ! Python, R, and Julia, the maximum of an empty array raises errors/warnings (as of 20220318).
-    if (all(.not. mask) .or. violmx <= min(0.01_RP * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
+    if (all(.not. mask) .or. violmx <= max(EPS * dnorm, TEN * norm(apsd(iact(1:nact)), 'inf'))) then
         exit
     end if
 
