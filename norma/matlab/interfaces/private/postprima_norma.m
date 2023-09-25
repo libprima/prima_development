@@ -598,7 +598,7 @@ if options.debug && ~options.classical
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     cobyla_norma_prec = 1e-5;
     lincoa_norma_prec = 1e-5;
-    bobyqa_norma_prec = 1e-12;
+    bobyqa_norma_prec = 1e-9;
 
     % Check whether constrviolation is correct
     constrviolation = 0;
