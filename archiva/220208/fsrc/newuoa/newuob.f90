@@ -6,7 +6,7 @@ module newuob_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, February 06, 2022 PM11:32:05
+! Last Modified: Friday, September 29, 2023 AM03:08:34
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -254,14 +254,18 @@ do tr = 1, maxtr
 
         ! Shift XBASE if XOPT may be too far from XBASE.
         !if (inprod(d, d) <= 1.0e-3_RP*inprod(xopt, xopt)) then  ! Powell's code
+!write(16,*) nf, 'sss', dnorm**2, inprod(xopt, xopt), xbase(1:n), xopt(1:n)
         if (dnorm**2 <= 1.0E-3_RP * inprod(xopt, xopt)) then
+!write(16,*) nf, 'shift', dnorm**2, inprod(xopt, xopt), xbase(1:n), xopt(1:n)
             call shiftbase(idz, pq, zmat, bmat, gq, hq, xbase, xopt, xpt)
         end if
 
         ! Calculate the next value of the objective function.
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
+!write(16,*) 'xx', nf, xbase(1:n), xopt+d, x(1:n)
         nf = nf + 1_IK
+!write (16, *) 'tr', nf, f, d, x
         call fmsg(solver, iprint, nf, f, x)
         ! Save X and F into the history.
         call savehist(nf, f, x, fhist, xhist)
@@ -416,7 +420,10 @@ do tr = 1, maxtr
         delbar = max(min(TENTH * maxval(xdist), HALF * delta), rho)
 
         ! Shift XBASE if XOPT may be too far from XBASE.
-        if (delbar**2 <= 1.0E-3_RP * inprod(xopt, xopt)) then
+        !if (delbar**2 <= 1.0E-3_RP * inprod(xopt, xopt)) then
+!write(16,*) nf, 'sss', dnorm**2, inprod(xopt, xopt), xbase(1:n), xopt(1:n)
+        if (dnorm**2 <= 1.0E-3_RP * inprod(xopt, xopt)) then
+!write(16,*) nf, 'shift', dnorm**2, inprod(xopt, xopt), xbase(1:n), xopt(1:n)
             call shiftbase(idz, pq, zmat, bmat, gq, hq, xbase, xopt, xpt)
         end if
 
@@ -436,7 +443,9 @@ do tr = 1, maxtr
         ! Calculate the next value of the objective function.
         x = xbase + (xopt + d)
         call evaluate(calfun, x, f)
+!write(16,*) 'xx', nf, xbase(1:n), xopt+d, x(1:n)
         nf = nf + 1_IK
+!write (16, *) 'geo', nf, f, x
         call fmsg(solver, iprint, nf, f, x)
         ! Save X and F into the history.
         call savehist(nf, f, x, fhist, xhist)
@@ -520,6 +529,8 @@ if (DEBUGGING) then
         & 'FHIST does not contain NaN/+Inf', srname)
     call assert(.not. any(fhist(1:min(nf, maxfhist)) < f), 'F is the smallest in FHIST', srname)
 end if
+
+!close (16)
 
 end subroutine newuob
 

@@ -6,7 +6,7 @@ module trustregion_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Wednesday, February 02, 2022 AM10:35:08
+! Last Modified: Friday, September 29, 2023 AM03:09:36
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -201,6 +201,7 @@ do iter = 1, itermax
     ! Update S, HS, and GG.
     sold = s
     s = s + alpha * d
+!write (16, *) iter, s
     ss = inprod(s, s)
     hs = hs + alpha * hd
     ggsav = gg  ! Gradient norm square before this iteration
@@ -326,6 +327,8 @@ do iter = 1, itermax
     sth = sin(angle)
     sold = s
     s = cth * s + sth * d
+!write (16, *) iter, s
+
 
     ! Exit in case of Inf/NaN in S.
     if (.not. is_finite(sum(abs(s)))) then
@@ -445,7 +448,7 @@ elseif (ratio <= eta2) then
 else
     delta = max(HALF * delta_in, gamma2 * dnorm)  ! Powell's version
     !delta = max(delta_in, gamma2 * dnorm)  ! Modified version
-    ! For noise-free CUTEst problems of <= 200 variables, Powell's version works slightly better 
+    ! For noise-free CUTEst problems of <= 200 variables, Powell's version works slightly better
     ! than the modified one.
 end if
 

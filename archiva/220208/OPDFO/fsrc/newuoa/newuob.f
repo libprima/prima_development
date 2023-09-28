@@ -265,7 +265,10 @@ C
 C     Shift XBASE if XOPT may be too far from XBASE. First make the changes
 C     to BMAT that do not depend on ZMAT.
 C
-  120 IF (DSQ <= 1.0D-3*XOPTSQ) THEN
+!write(17,*) nf, 'sss', dnorm**2, xoptsq, xbase(1:n), xopt(1:n)
+  !120 IF (DSQ <= 1.0D-3*XOPTSQ) THEN
+  120 IF (dnorm**2 <= 1.0D-3*XOPTSQ) THEN
+!write(17,*) nf, 'shift',  dnorm**2, xoptsq, xbase(1:n), xopt(1:n)
           TEMPQ=0.25D0*XOPTSQ
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           vtmp(1:n) = gq(1:n) ; gq(1:n) = zero
@@ -558,6 +561,7 @@ C
           XNEW(I)=XOPT(I)+D(I)
           X(I)=XBASE(I)+XNEW(I)
       END DO
+!write(17,*) 'xx', nf, xbase(1:n), xnew(1:n), x(1:n)
       NF=NF+1
   310 IF (NF > NFTEST) THEN
           NF=NF-1
@@ -594,7 +598,13 @@ C     will not be reached.
       END DO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
       CALL CALFUN (N,X,F)
+      if (KNEW > 0) then
+!write (17, *) 'geo', nf, f, x(1:n)
+      else
+!write (17, *) 'tr', nf, f, d(1:n), x(1:n)
+      end if
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (f /= f .or. f > hugefun) f = hugefun
@@ -937,7 +947,7 @@ C      IF (IPRINT .GE. 1) THEN
           PRINT 520, F,(X(I),I=1,N)
       END IF
 
-      close(17)
+      !close(17)
 
       RETURN
       END

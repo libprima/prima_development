@@ -109,6 +109,7 @@ C
           HS(I)=HS(I)+ALPHA*HD(I)
           GG=GG+(G(I)+HS(I))**2
       END DO
+!write (17, *) iterc, step(1:n)
 
       ! Exit in case of Inf/NaN in STEP.
       temp = sum(abs(step(1:n)))
@@ -239,6 +240,7 @@ C
           HS(I)=CTH*HS(I)+STH*HD(I)
           GG=GG+(G(I)+HS(I))**2
       END DO
+!write (17, *) iterc, step(1:n)
 
       ! Exit in case of Inf/NaN in STEP.
       temp = sum(abs(step(1:n)))
