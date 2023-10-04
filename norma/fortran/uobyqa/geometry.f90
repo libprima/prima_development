@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, October 04, 2023 PM10:01:25
+! Last Modified: Wednesday, October 04, 2023 PM11:49:08
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -191,6 +191,7 @@ use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, TWO, HALF, QUART, DE
 use, non_intrinsic :: debug_mod, only : assert
 use, non_intrinsic :: infnan_mod, only : is_nan, is_finite
 use, non_intrinsic :: linalg_mod, only : matprod, inprod, norm, vec2smat, smat_mul_vec
+use, non_intrinsic :: powalg_mod, only : calvlag
 
 implicit none
 
@@ -424,7 +425,9 @@ else
     end if
 end if
 d = tempd * d + tempv * v
-if (is_nan(sum(abs(d)))) then
+vlag = calvlag(pl, d, xopt, kopt)
+vlagc = calvlag(pl, dcauchy, xopt, kopt)
+if (is_nan(sum(abs(d))) .or. abs(vlagc(knew)) > TWO * abs(vlag(knew))) then
     d = dcauchy
 end if
 
