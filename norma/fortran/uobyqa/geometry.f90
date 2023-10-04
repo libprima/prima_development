@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, August 28, 2023 AM07:16:16
+! Last Modified: Wednesday, October 04, 2023 PM10:01:25
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -230,6 +230,8 @@ real(RP) :: vhd
 real(RP) :: vhg
 real(RP) :: vhv
 real(RP) :: vlin
+real(RP) :: vlag(size(xpt, 2))
+real(RP) :: vlagc(size(xpt, 2))
 real(RP) :: vmu
 real(RP) :: vnorm
 real(RP) :: vv
