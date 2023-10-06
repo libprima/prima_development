@@ -47,9 +47,11 @@ module infnan_mod
 ! (X > HUGE(X) .OR. X < -HUGE(X)) may differ from (ABS(X) > HUGE(X)) , and
 ! (ABS(X) > HUGE(X) .AND. X > 0) may differ from (X > HUGE(X)) .
 !
-! 8. IS_NAN must be implemented in a file separated from is_inf and is_finite (a separated module is
+! 8. IS_NAN must be implemented in a file separated from IS_INF and IS_FINITE (a separated module is
 ! not enough). Otherwise, IS_NAN may not work with some compilers invoked with aggressive
 ! optimization flags e.g., ifx -fast with ifx 2022.1.0 or flang -Ofast with flang 15.0.3.
+! Similarly, the intrinsic HUGE must be wrapped by HUGE_VALUE in a file separated from IS_INF and
+! IS_FINITE. Otherwise, IS_INF and IS_FINITE do not work with `gfortran-13 -Ofast`.
 !
 ! 9. Even though the functions involve invocation of ABS and HUGE, their performance (in terms of
 ! CPU time) turns out comparable to or even better than the functions in IEEE_ARITHMETIC.
@@ -58,10 +60,11 @@ module infnan_mod
 !
 ! Started: July 2020.
 !
-! Last Modified: Friday, October 06, 2023 PM07:38:25
+! Last Modified: Friday, October 06, 2023 PM07:22:46
 !--------------------------------------------------------------------------------------------------!
 
-use inf_mod, only : is_finite, is_inf, is_posinf, is_neginf
+use, non_intrinsic :: huge_mod, only : huge_value
+use, non_intrinsic :: inf_mod, only : is_finite, is_inf, is_posinf, is_neginf
 implicit none
 private
 public :: is_finite, is_posinf, is_neginf, is_inf, is_nan
@@ -89,8 +92,10 @@ use, non_intrinsic :: consts_mod, only : SP
 implicit none
 real(SP), intent(in) :: x
 logical :: y
-!y = (.not. (x <= huge(x) .and. x >= -huge(x))) .and. (.not. abs(x) > huge(x))  ! Does not always work
-y = (.not. is_finite(x)) .and. (.not. is_inf(x))
+!y = ((.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .and. (.not. abs(x) > huge_value(x))
+!y = (.not. is_finite(x) .and. .not. (abs(x) > huge_value(x))) .or. y
+y = ((.not. is_finite(x)) .and. (.not. is_inf(x)))
+y = ((.not. is_inf(x)) .and. (.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .or. y
 end function is_nan_sp
 
 pure elemental function is_nan_dp(x) result(y)
@@ -98,8 +103,10 @@ use, non_intrinsic :: consts_mod, only : DP
 implicit none
 real(DP), intent(in) :: x
 logical :: y
-!y = (.not. (x <= huge(x) .and. x >= -huge(x))) .and. (.not. abs(x) > huge(x))  ! Does not always work
-y = (.not. is_finite(x)) .and. (.not. is_inf(x))
+!y = ((.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .and. (.not. abs(x) > huge_value(x))
+!y = (.not. is_finite(x) .and. .not. (abs(x) > huge_value(x))) .or. y
+y = ((.not. is_finite(x)) .and. (.not. is_inf(x)))
+y = ((.not. is_inf(x)) .and. (.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .or. y
 end function is_nan_dp
 
 
@@ -110,8 +117,10 @@ use, non_intrinsic :: consts_mod, only : QP
 implicit none
 real(QP), intent(in) :: x
 logical :: y
-!y = (.not. (x <= huge(x) .and. x >= -huge(x))) .and. (.not. abs(x) > huge(x))  ! Does not always work
-y = (.not. is_finite(x)) .and. (.not. is_inf(x))
+!y = ((.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .and. (.not. abs(x) > huge_value(x))
+!y = (.not. is_finite(x) .and. .not. (abs(x) > huge_value(x))) .or. y
+y = ((.not. is_finite(x)) .and. (.not. is_inf(x)))
+y = ((.not. is_inf(x)) .and. (.not. (x <= huge_value(x) .and. x >= -huge_value(x)))) .or. y
 end function is_nan_qp
 
 #endif
