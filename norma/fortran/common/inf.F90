@@ -9,10 +9,9 @@ module inf_mod
 !
 ! Started: July 2020.
 !
-! Last Modified: Friday, October 06, 2023 AM11:08:24
+! Last Modified: Friday, October 06, 2023 PM07:38:07
 !--------------------------------------------------------------------------------------------------!
 
-use, non_intrinsic :: huge_mode, only : huge_value
 implicit none
 private
 public :: is_finite, is_posinf, is_neginf, is_inf
@@ -64,7 +63,7 @@ use, non_intrinsic :: consts_mod, only : SP
 implicit none
 real(SP), intent(in) :: x
 logical :: y
-y = (x <= huge_value(x) .and. x >= -huge_value(x))
+y = (x <= huge(x) .and. x >= -huge(x))
 end function is_finite_sp
 
 pure elemental function is_finite_dp(x) result(y)
@@ -72,7 +71,7 @@ use, non_intrinsic :: consts_mod, only : DP
 implicit none
 real(DP), intent(in) :: x
 logical :: y
-y = (x <= huge_value(x) .and. x >= -huge_value(x))
+y = (x <= huge(x) .and. x >= -huge(x))
 end function is_finite_dp
 
 pure elemental function is_posinf_sp(x) result(y)
@@ -80,7 +79,7 @@ use, non_intrinsic :: consts_mod, only : SP
 implicit none
 real(SP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x > 0)
+y = (abs(x) > huge(x)) .and. (x > 0)
 end function is_posinf_sp
 
 pure elemental function is_posinf_dp(x) result(y)
@@ -88,7 +87,7 @@ use, non_intrinsic :: consts_mod, only : DP
 implicit none
 real(DP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x > 0)
+y = (abs(x) > huge(x)) .and. (x > 0)
 end function is_posinf_dp
 
 pure elemental function is_neginf_sp(x) result(y)
@@ -96,7 +95,7 @@ use, non_intrinsic :: consts_mod, only : SP
 implicit none
 real(SP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x < 0)
+y = (abs(x) > huge(x)) .and. (x < 0)
 end function is_neginf_sp
 
 pure elemental function is_neginf_dp(x) result(y)
@@ -104,7 +103,7 @@ use, non_intrinsic :: consts_mod, only : DP
 implicit none
 real(DP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x < 0)
+y = (abs(x) > huge(x)) .and. (x < 0)
 end function is_neginf_dp
 
 pure elemental function is_inf_sp(x) result(y)
@@ -112,7 +111,7 @@ use, non_intrinsic :: consts_mod, only : SP
 implicit none
 real(SP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x))
+y = (abs(x) > huge(x))
 end function is_inf_sp
 
 pure elemental function is_inf_dp(x) result(y)
@@ -120,7 +119,7 @@ use, non_intrinsic :: consts_mod, only : DP
 implicit none
 real(DP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x))
+y = (abs(x) > huge(x))
 end function is_inf_dp
 
 
@@ -131,7 +130,7 @@ use, non_intrinsic :: consts_mod, only : QP
 implicit none
 real(QP), intent(in) :: x
 logical :: y
-y = (x <= huge_value(x) .and. x >= -huge_value(x))
+y = (x <= huge(x) .and. x >= -huge(x))
 end function is_finite_qp
 
 pure elemental function is_posinf_qp(x) result(y)
@@ -139,7 +138,7 @@ use, non_intrinsic :: consts_mod, only : QP
 implicit none
 real(QP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x > 0)
+y = (abs(x) > huge(x)) .and. (x > 0)
 end function is_posinf_qp
 
 pure elemental function is_neginf_qp(x) result(y)
@@ -147,7 +146,7 @@ use, non_intrinsic :: consts_mod, only : QP
 implicit none
 real(QP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x)) .and. (x < 0)
+y = (abs(x) > huge(x)) .and. (x < 0)
 end function is_neginf_qp
 
 pure elemental function is_inf_qp(x) result(y)
@@ -155,7 +154,7 @@ use, non_intrinsic :: consts_mod, only : QP
 implicit none
 real(QP), intent(in) :: x
 logical :: y
-y = (abs(x) > huge_value(x))
+y = (abs(x) > huge(x))
 end function is_inf_qp
 
 #endif
