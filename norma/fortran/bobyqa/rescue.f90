@@ -18,7 +18,7 @@ module rescue_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, June 21, 2023 PM08:32:09
+! Last Modified: Thursday, October 12, 2023 PM12:06:05
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -655,7 +655,7 @@ real(RP) :: tau
 real(RP) :: v1(size(bmat, 1))
 real(RP) :: v2(size(bmat, 1))
 real(RP) :: vlag(size(vlag_in))
-real(RP) :: ztest
+real(RP) :: ztest, zknew1
 
 ! Sizes.
 n = int(size(bmat, 1), kind(n))
@@ -727,7 +727,9 @@ hcol(npt + 1:npt + n) = bmat(:, knew)
 
 ! Complete the updating of ZMAT. See (4.14) of the BOBYQA paper.
 sqrtdn = sqrt(denom)
+zknew1 = zmat(knew, 1)
 zmat(:, 1) = (tau / sqrtdn) * zmat(:, 1) - (zmat(knew, 1) / sqrtdn) * vlag(1:npt)
+zmat(knew, 1) = zknew1 / sqrtdn
 
 ! Finally, update the matrix BMAT. It implements the last N rows of (4.9) in the BOBYQA paper.
 alpha = hcol(knew)
