@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, October 04, 2023 PM11:49:08
+! Last Modified: Friday, October 13, 2023 PM02:27:17
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -427,7 +427,8 @@ end if
 d = tempd * d + tempv * v
 vlag = calvlag(pl, d, xopt, kopt)
 vlagc = calvlag(pl, dcauchy, xopt, kopt)
-if (is_nan(sum(abs(d))) .or. abs(vlagc(knew)) > TWO * abs(vlag(knew))) then
+!if (is_nan(sum(abs(d))) .or. abs(vlagc(knew)) > TWO * abs(vlag(knew))) then
+if (is_nan(sum(abs(d))) .or. .not. abs(vlagc(knew)) <= TWO * abs(vlag(knew))) then
     d = dcauchy
 end if
 
