@@ -34,11 +34,15 @@ printf "Done.\n"
 # becomes a new archived version.
 printf "\nArchiving the current version in %s ...\n" "$ARCHIVA_TODAY"
 # Exclude the following folders/files from archiva.
+# It is important to exclude *lint, which are symbolic links to the corresponding files in the
+# fortran/tests directory. If we do not exclude them, they will be broken, which will cause MATLAB
+# `copyfile` to fail.
 EXCLUDE_LIST=$(mktemp -q)
 cat > "$EXCLUDE_LIST" <<EOF
 matlab/tests/testdata
 matlab/tests/*.mat
 fortran/notes
+fortran/*/*lint
 EOF
 # Copy by rsync.
 mkdir -p "$ARCHIVA_TODAY"
@@ -53,6 +57,9 @@ printf "Done.\n"
 # Copy the current version to $NORMA.
 printf "\nCreating the new norma version in %s...\n" "$NORMA"
 # Exclude the following folders/files from norma.
+# It is important to exclude *lint, which are symbolic links to the corresponding files in the
+# fortran/tests directory. If we do not exclude them, they will be broken, which will cause MATLAB
+# `copyfile` to fail.
 cat > "$EXCLUDE_LIST" <<EOF
 matlab/CHANGES
 matlab/examples
@@ -61,6 +68,7 @@ matlab/tests
 fortran/original
 fortran/notes
 fortran/tests
+fortran/*/*lint
 EOF
 # Copy by rsync.
 mkdir -p "$NORMA"
