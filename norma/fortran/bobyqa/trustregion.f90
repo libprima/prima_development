@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, August 27, 2023 PM09:49:18
+! Last Modified: Friday, November 03, 2023 PM02:25:11
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -445,7 +445,8 @@ do iter = 1, maxiter
     ! Also, should exit if the orthogonality of S and D is damaged, or S is  not finite.
     ! See the corresponding part of TRSAPP.
     temp = gredsq * dredsq - dredg * dredg
-    if (temp <= ctest**2 * qred * qred .or. is_nan(temp) .or. is_nan(qred)) then
+    !if (temp <= ctest**2 * qred * qred .or. is_nan(temp) .or. is_nan(qred)) then
+    if (.not. temp > ctest**2 * max(gredsq * dredsq, qred**2)) then!
         exit
     end if
     temp = sqrt(temp)
