@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Tuesday, April 11, 2023 PM04:47:58
+! Last Modified: Thursday, January 04, 2024 AM01:22:52
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -325,23 +325,7 @@ end if
 ! For BOBYQA, revise X0 or RHOBEG so that the distance between X0 and the inactive bounds is at
 ! least RHOBEG. If HONOUR_X0 == TRUE, revise RHOBEG if needed; otherwise, revise HONOUR_X0 if needed.
 if (present(honour_x0)) then
-    if (honour_x0) then
-        rhobeg_old = rhobeg; 
-        lbx = (is_finite(xl) .and. x0 - xl <= EPS * max(ONE, abs(xl))) ! X0 essentially equals XL
-        ubx = (is_finite(xu) .and. x0 - xu >= -EPS * max(ONE, abs(xu))) ! X0 essentially equals XU
-        x0(trueloc(lbx)) = xl(trueloc(lbx))
-        x0(trueloc(ubx)) = xu(trueloc(ubx))
-        rhobeg = max(EPS, minval([rhobeg, x0(falseloc(lbx)) - xl(falseloc(lbx)), xu(falseloc(ubx)) - x0(falseloc(ubx))]))
-        if (rhobeg_old - rhobeg > EPS * max(ONE, rhobeg_old)) then
-            rhoend = max(EPS, min(TENTH * rhobeg, rhoend)) ! We do not revise RHOEND unless RHOBEG is truly revised.
-            if (has_rhobeg) then
-                call warning(solver, 'RHOBEG is revised to '//num2str(rhobeg)//' and RHOEND to at most 0.1*RHOBEG'// &
-                    & ' so that the distance between X0 and the inactive bounds is at least RHOBEG')
-            end if
-        else
-            rhoend = min(rhoend, rhobeg)  ! This may update RHOEND slightly.
-        end if
-    else
+    if (.not. honour_x0) then
         x0_old = x0  ! Recorded to see whether X0 is really revised.
         ! N.B.: The following revision is valid only if XL <= X0 <= XU and RHOBEG <= MINVAL(XU-XL)/2,
         ! which should hold at this point due to the revision of RHOBEG and moderation of X0.
@@ -370,6 +354,22 @@ if (present(honour_x0)) then
             call warning(solver, 'X0 is revised so that the distance between X0 and the inactive bounds is at least RHOBEG; '// &
                  & 'set HONOUR_X0 to .TRUE. if you prefer to keep X0 unchanged')
         end if
+    end if
+
+    rhobeg_old = rhobeg; 
+    lbx = (is_finite(xl) .and. x0 - xl <= EPS * max(ONE, abs(xl))) ! X0 essentially equals XL
+    ubx = (is_finite(xu) .and. x0 - xu >= -EPS * max(ONE, abs(xu))) ! X0 essentially equals XU
+    x0(trueloc(lbx)) = xl(trueloc(lbx))
+    x0(trueloc(ubx)) = xu(trueloc(ubx))
+    rhobeg = max(EPS, minval([rhobeg, x0(falseloc(lbx)) - xl(falseloc(lbx)), xu(falseloc(ubx)) - x0(falseloc(ubx))]))
+    if (rhobeg_old - rhobeg > EPS * max(ONE, rhobeg_old)) then
+        rhoend = max(EPS, min(TENTH * rhobeg, rhoend)) ! We do not revise RHOEND unless RHOBEG is truly revised.
+        if (has_rhobeg) then
+            call warning(solver, 'RHOBEG is revised to '//num2str(rhobeg)//' and RHOEND to at most 0.1*RHOBEG'// &
+                & ' so that the distance between X0 and the inactive bounds is at least RHOBEG')
+        end if
+    else
+        rhoend = min(rhoend, rhobeg)  ! This may update RHOEND slightly.
     end if
 end if
 
