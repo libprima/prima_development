@@ -25,7 +25,7 @@ module bobyqa_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, July 03, 2023 AM12:01:01
+! Last Modified: Saturday, January 06, 2024 PM07:41:35
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -390,10 +390,12 @@ else
 end if
 
 has_rhobeg = present(rhobeg)
+honour_x0_loc = .true.
 if (present(honour_x0)) then
     honour_x0_loc = honour_x0
-else
-    honour_x0_loc = (.not. has_rhobeg)
+else if (present(rhobeg)) then
+    !honour_x0_loc = (.not. has_rhobeg)
+    honour_x0_loc = .not. (rhobeg > 0 .and. is_finite(rhobeg))
 end if
 
 ! Preprocess the inputs in case some of them are invalid. It does nothing if all inputs are valid.
