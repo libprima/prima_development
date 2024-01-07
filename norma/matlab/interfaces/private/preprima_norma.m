@@ -910,6 +910,10 @@ output_xhist = false; % Output the history of x?
 output_nlchist = false; % Output the history of the nonlinear constraints?
 min_maxfilt = 200; % The smallest value of maxfilt; if maxfilt is too small, the returned x may not be the best one visited
 maxfilt = 10*min_maxfilt; % Length of the filter used for selecting the returned x in constrained problems
+eta1 = 0.1;  % Reduction ratio threshold for shrinking the trust region
+eta2 = 0.7;  % Reduction ratio threshold for expanding the trust region
+gamma1 = 0.5;  % Factor for shrinking the trust region
+gamma2 = 2;  % Factor for expanding the trust region
 
 if ~(isa(options, 'struct') || isempty(options))
     % Public/normal error
@@ -1610,7 +1614,7 @@ if isfield(options, 'eta1')
     end
 end
 if ~validated
-    options.eta1 = NaN;  % NaN means that Fortran will take the hard-coded default value.
+    options.eta1 = eta1;  % NaN means that Fortran will take the hard-coded default value.
 end
 options.eta1 = double(options.eta1);
 
@@ -1635,7 +1639,7 @@ if isfield(options, 'eta2')
     end
 end
 if ~validated
-    options.eta2 = NaN;  % NaN means that Fortran will take the hard-coded default value.
+    options.eta2 = eta2;  % NaN means that Fortran will take the hard-coded default value.
 end
 options.eta2 = double(options.eta2);
 
@@ -1652,7 +1656,7 @@ if isfield(options, 'gamma1')
     end
 end
 if ~validated
-    options.gamma1 = NaN;  % NaN means that Fortran will take the hard-coded default value.
+    options.gamma1 = gamma1;  % NaN means that Fortran will take the hard-coded default value.
 end
 options.gamma1 = double(options.gamma1);
 
@@ -1669,7 +1673,7 @@ if isfield(options, 'gamma2')
     end
 end
 if ~validated
-    options.gamma2 = NaN;  % NaN means that Fortran will take the hard-coded default value.
+    options.gamma2 = gamma2;  % NaN means that Fortran will take the hard-coded default value.
 end
 options.gamma2 = double(options.gamma2);
 

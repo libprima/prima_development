@@ -6,7 +6,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Monday, February 07, 2022 AM12:00:33
+! Last Modified: Monday, January 08, 2024 AM03:57:28
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -242,6 +242,7 @@ info = MAXTR_REACHED
 ! REDUCE_RHO - Will we reduce rho after the trust-region iteration?
 ! COBYLA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 do tr = 1, maxtr
+!write (16, *) maxtr, tr
     ! Before the trust-region step, UPDATEPOLE has been called either implicitly by INITXFC/UPDATEXFC
     ! or explicitly after CPEN is updated, so that SIM(:, N + 1) is the optimal vertex.
 
@@ -263,6 +264,7 @@ do tr = 1, maxtr
     b = [-conmat(:, n + 1), -fval(n + 1)]
     ! Calculate the trust-region trial step D. Note that D does NOT depend on CPEN.
     d = trstlp(A, b, delta)
+!write (16, *) 'tr', nf + 1, d
     dnorm = min(delta, norm(d))
 
     ! Is the trust-region trial step short? N.B.: we compare DNORM with RHO, not DELTA.
@@ -270,6 +272,7 @@ do tr = 1, maxtr
     ! TENTH seems to work better than HALF or QUART, especially for linearly constrained problems.
     shortd = (dnorm < TENTH * rho)
 
+!write (16, *) shortd, dnorm, rho
     if (shortd) then
         ! Reduce DELTA if D is short. This seems quite important for performance.
         delta = TENTH * delta
@@ -381,6 +384,7 @@ do tr = 1, maxtr
     improve_geo = bad_trstep .and. .not. good_geo
 
     ! Should we enhance the resolution by reducing RHO?
+!write (16, *) bad_trstep, good_geo, max(delta, dnorm) <= rho, delta, dnorm, rho
     reduce_rho = bad_trstep .and. good_geo .and. (max(delta, dnorm) <= rho)
 
     ! Improve the geometry of the simplex by removing a point and adding a new one.
@@ -418,6 +422,7 @@ do tr = 1, maxtr
 
             ! Calculate the geometry step D.
             d = geostep(jdrop_geo, cpen, conmat, cval, delta, fval, factor_gamma, simi)
+!write (16, *) 'geo', nf + 1, d
 
             x = sim(:, n + 1) + d
             ! Evaluate the objective and constraints at X, taking care of possible Inf/NaN values.
@@ -454,7 +459,7 @@ do tr = 1, maxtr
         delta = HALF * rho
         rho = redrho(rho, rhoend)
         delta = max(delta, rho)
-        cpen = min(cpen, fcratio(fval, conmat))  ! It may set CPEN to 0. 
+        cpen = min(cpen, fcratio(fval, conmat))  ! It may set CPEN to 0.
         call rhomsg(solver, iprint, nf, fval(n + 1), rho, sim(:, n + 1), cval(n + 1), conmat(:, n + 1), cpen)
         call updatepole(cpen, conmat, cval, fval, sim, simi, subinfo)
         ! Check whether to exit due to damaging rounding detected in UPDATEPOLE.
@@ -477,6 +482,8 @@ cstrv = cfilt(kopt)
 call rangehist(nf, chist, conhist, fhist, xhist)
 
 call retmsg(solver, info, iprint, nf, f, x, cstrv, constr)
+
+!close (16)
 
 !====================!
 !  Calculation ends  !

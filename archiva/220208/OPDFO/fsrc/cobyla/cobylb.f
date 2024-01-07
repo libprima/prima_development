@@ -604,6 +604,8 @@ C      TEMP=0.0
           SIM(I,JDROP)=DX(I)
           TEMP=TEMP+SIMI(JDROP,I)*DX(I)
       END DO
+
+!write (17, *) 'geo', nfvals + 1, dx(1:n)
       DO I=1,N
           SIMI(JDROP,I)=SIMI(JDROP,I)/TEMP
       END DO
@@ -672,6 +674,7 @@ C
     ! 1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
       CALL TRSTLP (N,M,A,CON,delta,DX,IFULL,IACT,W(IZ),W(IZDOTA),
      1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
+!write (17, *) 'tr', nfvals + 1, dx(1:n)
 
         !write (17, *) 'tr', nfvals+1, A(1:n, 1:m + 1),dx(1:n)
 
@@ -1321,7 +1324,7 @@ C      NFVALS-2 instead of NFVALS-1.
       END IF
       MAXFUN=NFVALS
 
-      close(17)
+      !close(17)
 
       RETURN
       END

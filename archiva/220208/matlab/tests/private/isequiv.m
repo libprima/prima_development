@@ -521,6 +521,30 @@ if ismember('cobyla', solvers) && norm(x1-x2)>0 && isfield(output1, 'constrviola
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Zaikun 20240108: in case the modernized solver exits due to reaching the maximum number of
+% iterations, which is not implemented in the old solver.
+nf1 = output1.funcCount;
+nf2 = output2.funcCount;
+if endsWith(solvers{1}, 'n')
+    if exitflag1 == 20 && nf1 <= nf2 && all(output1.fhist(1:nf1) == output2.fhist(1:nf1)) && ...
+       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || all(output1.chist(1:nf1) == output2.chist(1:nf1)))
+        x1 = x2;
+        fx1 = fx2;
+        output1 = output2;
+        exitflag1 = exitflag2;
+    end
+end
+if endsWith(solvers{2}, 'n')
+    if exitflag2 == 20 && nf2 <= nf1 && all(output1.fhist(1:nf2) == output2.fhist(1:nf2)) && ...
+       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || all(output1.chist(1:nf2) == output2.chist(1:nf2)))
+        x1 = x2;
+        fx1 = fx2;
+        output1 = output2;
+        exitflag1 = exitflag2;
+    end
+end
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 equiv = iseq(x1, fx1, exitflag1, output1, x2, fx2, exitflag2, output2, prec);
