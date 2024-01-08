@@ -235,7 +235,7 @@ function eq = iseq(x, f, exitflag, output, xx, ff, ee, oo, prec)
 eq = true;
 
 if ~isempty(setdiff(fieldnames(output), [fieldnames(oo); 'fhist'; 'xhist'; 'chist'; 'nlcihist'; 'nlcehist'])) ...
-        || ~isempty(setdiff(fieldnames(oo), [fieldnames(output); 'fhist'; 'xhist'; 'chist'; 'nlcihist', 'nlcehist']))
+        || ~isempty(setdiff(fieldnames(oo), [fieldnames(output); 'fhist'; 'xhist'; 'chist'; 'nlcihist'; 'nlcehist']))
     eq = false;
 end
 
@@ -526,8 +526,10 @@ end
 nf1 = output1.funcCount;
 nf2 = output2.funcCount;
 if endsWith(solvers{1}, 'n')
-    if exitflag1 == 20 && nf1 <= nf2 && all(output1.fhist(1:nf1) == output2.fhist(1:nf1)) && ...
-       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || all(output1.chist(1:nf1) == output2.chist(1:nf1)))
+    if exitflag1 == 20 && nf1 <= nf2 && ...
+       all(output2.fhist(end-minfhist+1:end-(nf2-nf1)) == output1.fhist(end-minfhist+(nf2-nf1)+1:end)) && ...
+       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || ...
+       all(output2.chist(end-minchist+1:end-(nf2-nf1)) == output1.chist(end-minchist+(nf2-nf1)+1:end)))
         x1 = x2;
         fx1 = fx2;
         output1 = output2;
@@ -535,8 +537,10 @@ if endsWith(solvers{1}, 'n')
     end
 end
 if endsWith(solvers{2}, 'n')
-    if exitflag2 == 20 && nf2 <= nf1 && all(output1.fhist(1:nf2) == output2.fhist(1:nf2)) && ...
-       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || all(output1.chist(1:nf2) == output2.chist(1:nf2)))
+    if exitflag2 == 20 && nf2 <= nf1 && ...
+       all(output1.fhist(end-minfhist+1:end-(nf1-nf2)) == output2.fhist(end-minfhist+(nf1-nf2)+1:end)) && ...
+       (~isfield(output1, 'constrviolation') && ~isfield(output2, 'constrviolation') || ...
+       all(output1.chist(end-minchist+1:end-(nf1-nf2)) == output2.chist(end-minchist+(nf1-nf2)+1:end)))
         x1 = x2;
         fx1 = fx2;
         output1 = output2;
