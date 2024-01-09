@@ -470,6 +470,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Special Treatments%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 minfhist = min(length(output1.fhist), length(output2.fhist));
+minchist = min(length(output1.chist), length(output2.chist));
 % NEWUOA
 if strcmpi(solvers{1}, 'newuoa') && strcmpi(solvers{2}, 'newuoan') && exitflag1 == 2 && exitflag2 ~=2 ...
         && fx2 <= fx1 && output1.funcCount <= output2.funcCount ...
