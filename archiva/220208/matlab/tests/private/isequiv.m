@@ -472,7 +472,7 @@ end
 minfhist = min(length(output1.fhist), length(output2.fhist));
 if isfield(output1, 'chist') && isfield(output2, 'chist')
     minchist = min(length(output1.chist), length(output2.chist));
-end if
+end
 
 % NEWUOA
 if strcmpi(solvers{1}, 'newuoa') && strcmpi(solvers{2}, 'newuoan') && exitflag1 == 2 && exitflag2 ~=2 ...
