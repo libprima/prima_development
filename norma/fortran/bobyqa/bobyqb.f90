@@ -187,12 +187,12 @@ maxxhist = int(size(xhist, 2), kind(maxxhist))
 maxfhist = int(size(fhist), kind(maxfhist))
 maxhist = int(max(maxxhist, maxfhist), kind(maxhist))
 
-write (17, *) '[rhobeg, rhoend, eta1, eta2, gamma1, gamma2, maxfun, npt] = '
-write (17, *) [rhobeg, rhoend, eta1, eta2, gamma1, gamma2], [maxfun, npt]
-write (17, *) 'x = ', x
-write (17, *) 'xl = ', xl
-write (17, *) 'xu = ', xu
-close (17)
+!write (17, *) '[rhobeg, rhoend, eta1, eta2, gamma1, gamma2, maxfun, npt] = '
+!write (17, *) [rhobeg, rhoend, eta1, eta2, gamma1, gamma2], [maxfun, npt]
+!write (17, *) 'x = ', x
+!write (17, *) 'xl = ', xl
+!write (17, *) 'xu = ', xu
+!close (17)
 
 ! Preconditions
 if (DEBUGGING) then

@@ -398,7 +398,7 @@ else if (present(rhobeg)) then
     honour_x0_loc = .not. (rhobeg > 0 .and. is_finite(rhobeg))
 end if
 
-write (17, *) 'honour_x0_loc = ', honour_x0_loc, 'rhobeg_loc = ', rhobeg_loc, 'x0 = ', x
+!write (17, *) 'honour_x0_loc = ', honour_x0_loc, 'rhobeg_loc = ', rhobeg_loc, 'x0 = ', x
 
 ! Preprocess the inputs in case some of them are invalid. It does nothing if all inputs are valid.
 call preproc(solver, n, iprint_loc, maxfun_loc, maxhist_loc, ftarget_loc, rhobeg_loc, rhoend_loc, &

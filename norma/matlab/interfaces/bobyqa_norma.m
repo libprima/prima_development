@@ -282,8 +282,6 @@ else
 end
 solver = options.solver;
 
-format long; options
-
 % Solve the problem, starting with special cases.
 if ~strcmp(invoker, 'prima_norma') && probinfo.infeasible % The problem turned out infeasible during preprima_norma
     output.x = x0;
