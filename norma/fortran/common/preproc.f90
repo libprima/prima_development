@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Thursday, January 04, 2024 AM01:22:52
+! Last Modified: Sunday, January 21, 2024 AM11:02:47
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -365,7 +365,7 @@ if (present(honour_x0)) then
     if (rhobeg_old - rhobeg > EPS * max(ONE, rhobeg_old)) then
         rhoend = max(EPS, min(TENTH * rhobeg, rhoend)) ! We do not revise RHOEND unless RHOBEG is truly revised.
         if (has_rhobeg) then
-            call warning(solver, 'RHOBEG is revised to '//num2str(rhobeg)//' and RHOEND to at most 0.1*RHOBEG'// &
+            call warning(solver//'_norma', 'RHOBEG is revised to '//num2str(rhobeg)//' and RHOEND to '// &
                 & ' so that the distance between X0 and the inactive bounds is at least RHOBEG')
         end if
     else
