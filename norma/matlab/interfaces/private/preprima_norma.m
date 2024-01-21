@@ -1961,25 +1961,25 @@ if ~ismember(lower(options.solver), solver_list)
     error(sprintf('%s:InvalidSolver', funname), '%s: UNEXPECTED ERROR: %s serves only %s.', funname, funname, strjoin(solver_list, ', '));
 end
 
-if isfield(options, 'honour_x0') && options.honour_x0  % In this case, we respect the user-defined x0 and revise rhobeg
-    rhobeg_old = options.rhobeg;
-    lbx = (lb > -inf & x0 - lb <= eps*max(abs(lb), 1));  % x0 essentially equals lb
-    ubx = (ub < inf & x0 - ub >= -eps*max(abs(ub), 1));  % x0 essentially equals ub
-    x0(lbx) = lb(lbx);
-    x0(ubx) = ub(ubx);
-    options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
-    if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
-        options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
-        if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
-            wid = sprintf('%s:ReviseRhobeg', invoker);
-            wmsg = sprintf('%s: rhobeg is revised to %g and rhoend to %g so that the distance between x0 and the inactive bounds is at least rhobeg.', invoker, options.rhobeg, options.rhoend);
-            warning(wid, '%s', wmsg);
-            warnings = [warnings, wmsg];
-        end
-    else
-        options.rhoend = min(options.rhoend, options.rhobeg);  % This may update rhoend slightly
-    end
-else
+if isfield(options, 'honour_x0') && ~options.honour_x0  % In this case, we respect the user-defined x0 and revise rhobeg
+    %rhobeg_old = options.rhobeg;
+    %lbx = (lb > -inf & x0 - lb <= eps*max(abs(lb), 1));  % x0 essentially equals lb
+    %ubx = (ub < inf & x0 - ub >= -eps*max(abs(ub), 1));  % x0 essentially equals ub
+    %x0(lbx) = lb(lbx);
+    %x0(ubx) = ub(ubx);
+    %options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
+    %if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
+    %    options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    %    if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
+    %        wid = sprintf('%s:ReviseRhobeg', invoker);
+    %        wmsg = sprintf('%s: rhobeg is revised to %g and rhoend to %g so that the distance between x0 and the inactive bounds is at least rhobeg.', invoker, options.rhobeg, options.rhoend);
+    %        warning(wid, '%s', wmsg);
+    %        warnings = [warnings, wmsg];
+    %    end
+    %else
+    %    options.rhoend = min(options.rhoend, options.rhobeg);  % This may update rhoend slightly
+    %end
+%else
     % N.B.: The following code is valid only if lb <= x0 <= ub and rhobeg <= min(ub-lb)/2, which
     % hold after `pre_options` and `project` are invoked.
     x0_old = x0;
@@ -1997,6 +1997,24 @@ else
         warning(wid, '%s', wmsg);
         warnings = [warnings, wmsg];
     end
+end
+
+rhobeg_old = options.rhobeg;
+lbx = (lb > -inf & x0 - lb <= eps*max(abs(lb), 1));  % x0 essentially equals lb
+ubx = (ub < inf & x0 - ub >= -eps*max(abs(ub), 1));  % x0 essentially equals ub
+x0(lbx) = lb(lbx);
+x0(ubx) = ub(ubx);
+options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
+if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
+    options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
+        wid = sprintf('%s:ReviseRhobeg', invoker);
+        wmsg = sprintf('%s: rhobeg is revised to %g and rhoend to %g so that the distance between x0 and the inactive bounds is at least rhobeg.', invoker, options.rhobeg, options.rhoend);
+        warning(wid, '%s', wmsg);
+        warnings = [warnings, wmsg];
+    end
+else
+    options.rhoend = min(options.rhoend, options.rhobeg);  % This may update rhoend slightly
 end
 return
 
