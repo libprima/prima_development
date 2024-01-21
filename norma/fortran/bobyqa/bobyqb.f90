@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, January 21, 2024 PM01:06:22
+! Last Modified: Sunday, January 21, 2024 PM01:44:02
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -187,11 +187,12 @@ maxxhist = int(size(xhist, 2), kind(maxxhist))
 maxfhist = int(size(fhist), kind(maxfhist))
 maxhist = int(max(maxxhist, maxfhist), kind(maxhist))
 
-write (*, *) '[rhobeg, rhoend, eta1, eta2, gamma1, gamma2, maxfun, npt] = '
-write (*, *) [rhobeg, rhoend, eta1, eta2, gamma1, gamma2], [maxfun, npt]
-write (*, *) 'x = ', x
-write (*, *) 'xl = ', xl
-write (*, *) 'xu = ', xu
+write (17, *) '[rhobeg, rhoend, eta1, eta2, gamma1, gamma2, maxfun, npt] = '
+write (17, *) [rhobeg, rhoend, eta1, eta2, gamma1, gamma2], [maxfun, npt]
+write (17, *) 'x = ', x
+write (17, *) 'xl = ', xl
+write (17, *) 'xu = ', xu
+close (17)
 
 ! Preconditions
 if (DEBUGGING) then
