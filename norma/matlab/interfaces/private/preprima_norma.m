@@ -1234,6 +1234,7 @@ if ~validated % options.rhoend has not got a valid value yet
     options.rhoend = min(0.1*options.rhobeg, rhoend);
 end
 options.rhoend = double(max(options.rhoend, eps));
+options.rhoend = min(options.rhobeg, options.rhoend);
 
 % Validate options.ftarget
 validated = false;
@@ -1642,6 +1643,7 @@ if ~validated
     options.eta2 = eta2;  % NaN means that Fortran will take the hard-coded default value.
 end
 options.eta2 = double(options.eta2);
+options.eta1 = min(options.eta2, options.eta1);
 
 % Validate options.gamma1
 validated = false;
@@ -2016,6 +2018,7 @@ if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
 else
     options.rhoend = min(options.rhoend, options.rhobeg);  % This may update rhoend slightly
 end
+options.rhoend = min(options.rhoend, options.rhobeg);  % This may update rhoend slightly
 return
 
 

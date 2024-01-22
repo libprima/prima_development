@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, January 21, 2024 AM11:02:47
+! Last Modified: Monday, January 22, 2024 PM11:15:27
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -250,6 +250,7 @@ if (present(eta2)) then
             & ' it is set to '//num2str(eta2))
     end if
 end if
+eta1 = min(eta1, eta2)
 
 ! Validate GAMMA1 and GAMMA2
 if (present(gamma1)) then
@@ -372,6 +373,7 @@ if (present(honour_x0)) then
         rhoend = min(rhoend, rhobeg)  ! This may update RHOEND slightly.
     end if
 end if
+rhoend = min(rhoend, rhobeg)
 
 ! Validate CTOL (it can be 0)
 if (present(ctol)) then
