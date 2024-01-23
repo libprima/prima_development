@@ -25,7 +25,7 @@ module bobyqa_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, January 21, 2024 PM02:44:17
+! Last Modified: Wednesday, January 24, 2024 AM12:55:10
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -399,6 +399,7 @@ else if (present(rhobeg)) then
 end if
 
 !write (17, *) 'honour_x0_loc = ', honour_x0_loc, 'rhobeg_loc = ', rhobeg_loc, 'x0 = ', x
+!close(17)
 
 ! Preprocess the inputs in case some of them are invalid. It does nothing if all inputs are valid.
 call preproc(solver, n, iprint_loc, maxfun_loc, maxhist_loc, ftarget_loc, rhobeg_loc, rhoend_loc, &
