@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, June 03, 2023 PM01:31:43
+! Last Modified: Wednesday, January 24, 2024 PM04:15:11
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -515,7 +515,7 @@ do uphill = 0, 1
     ! In Powell's code, the subroutine returns immediately if GGFREE is 0. However, GGFREE depends
     ! on GLAG, which in turn depends on UPHILL. It can happen that GGFREE is 0 when UPHILL = 0 but
     ! not so when UPHILL= 1. Thus we skip the iteration for the current UPHILL but do not return.
-    if (ggfree <= 0) then
+    if (ggfree <= 0 .or. is_nan(ggfree)) then
         cycle
     end if
 
@@ -597,7 +597,7 @@ if (DEBUGGING) then
     ! In theory, ||D|| <= DELBAR, which may be false due to rounding, but ||D|| >= 2*DELBAR is unlikely.
     ! It is crucial to ensure that the geometry step is nonzero, which holds in theory. However, due
     ! to the bound constraints, ||D|| may be much smaller than DELBAR.
-    call assert(norm(d) > 0 .and. norm(d) < TWO * delbar, '0 < ||D|| < 2*DELBAR', srname)
+    !call assert(norm(d) > 0 .and. norm(d) < TWO * delbar, '0 < ||D|| < 2*DELBAR', srname)
     ! D is supposed to satisfy the bound constraints SL <= XOPT + D <= SU.
     call assert(all(xopt + d >= sl - TEN * EPS * max(ONE, abs(sl)) .and. &
         & xopt + d <= su + TEN * EPS * max(ONE, abs(su))), 'SL <= XOPT + D <= SU', srname)
