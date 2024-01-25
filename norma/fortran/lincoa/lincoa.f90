@@ -36,7 +36,7 @@ module lincoa_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, August 02, 2023 AM11:36:40
+! Last Modified: Thursday, January 25, 2024 AM11:12:14
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -440,7 +440,7 @@ end if
 
 if (present(npt)) then
     npt_loc = npt
-elseif (maxfun_loc >= 1) then
+elseif (maxfun_loc >= 3) then
     npt_loc = max(n + 2_IK, min(maxfun_loc - 1_IK, 2_IK * n + 1_IK))
 else
     npt_loc = 2_IK * n + 1_IK
