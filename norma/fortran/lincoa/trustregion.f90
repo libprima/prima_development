@@ -11,7 +11,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, June 03, 2023 PM01:36:44
+! Last Modified: Saturday, January 27, 2024 AM02:45:30
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -22,7 +22,7 @@ public :: trstep, trrad
 contains
 
 
-subroutine trstep(amat, delta, gopt_in, hq_in, pq_in, rescon, xpt, iact, nact, qfac, rfac, s, ngetact)
+subroutine trstep(amat, delta, gopt_in, hq_in, pq_in, rescon, ctest, xpt, iact, nact, qfac, rfac, s, ngetact)
 !--------------------------------------------------------------------------------------------------!
 ! This subroutine solves
 !       minimize Q(XOPT + D)  s.t. ||D|| <= DELTA, AMAT^T*D <= B.
@@ -119,7 +119,8 @@ real(RP) :: sold(size(s))
 real(RP) :: sqrtd
 real(RP) :: ss
 real(RP) :: tol
-real(RP), parameter :: ctest = 0.01_RP  ! Convergence test parameter.
+!real(RP), parameter :: ctest = 0.01_RP  ! Convergence test parameter.
+real(RP), intent(in) :: ctest != 0.01_RP  ! Convergence test parameter.
 
 ! Sizes.
 m = int(size(amat, 2), kind(m))

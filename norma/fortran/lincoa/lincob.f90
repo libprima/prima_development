@@ -15,7 +15,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, January 25, 2024 PM08:05:53
+! Last Modified: Saturday, January 27, 2024 AM02:44:48
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -205,6 +205,7 @@ real(RP) :: xfilt(size(x), maxfilt)
 real(RP) :: xosav(size(x))
 real(RP) :: xpt(size(x), npt)
 real(RP) :: zmat(npt, npt - size(x) - 1)
+real(RP), parameter :: trtol = 1.0E-2_RP  ! Convergence tolerance of trust-region subproblem solver
 
 ! Sizes.
 m = int(size(bvec), kind(m))
@@ -351,7 +352,8 @@ info = MAXTR_REACHED
 ! LINCOA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 do tr = 1, maxtr
     ! Generate the next trust region step D by calling TRSTEP. Note that D is feasible.
-    call trstep(amat, delta, gopt, hq, pq, rescon, xpt, iact, nact, qfac, rfac, d, ngetact)
+    !call trstep(amat, delta, gopt, hq, pq, rescon, xpt, iact, nact, qfac, rfac, d, ngetact)
+    call trstep(amat, delta, gopt, hq, pq, rescon, trtol, xpt, iact, nact, qfac, rfac, d, ngetact)
     dnorm = min(delta, norm(d))
 
     ! A trust region step is applied whenever its length is at least 0.5*DELTA. It is also
