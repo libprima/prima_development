@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, November 03, 2023 PM02:25:11
+! Last Modified: Saturday, January 27, 2024 AM02:37:00
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -19,7 +19,8 @@ public :: trsbox, trrad
 contains
 
 
-subroutine trsbox(delta, gopt_in, hq_in, pq_in, sl, su, xopt, xpt, crvmin, d)
+!subroutine trsbox(delta, gopt_in, hq_in, pq_in, sl, su, xopt, xpt, crvmin, d)
+subroutine trsbox(delta, gopt_in, hq_in, pq_in, sl, su, ctest, xopt, xpt, crvmin, d)
 !--------------------------------------------------------------------------------------------------!
 ! This subroutine approximately solves
 ! minimize Q(XOPT + D) subject to ||D|| <= DELTA, SL <= D <= SU.
@@ -132,7 +133,8 @@ real(RP) :: sqdscr(size(gopt_in))
 real(RP) :: ssq(size(gopt_in))
 real(RP) :: tanbd(size(gopt_in))
 real(RP) :: xnew(size(gopt_in))
-real(RP), parameter :: ctest = 0.01_RP  ! Convergence test parameter.
+!real(RP), parameter :: ctest = 0.01_RP  ! Convergence test parameter.
+real(RP), intent(in) :: ctest! = 0.01_RP  ! Convergence test parameter.
 
 ! Sizes
 n = int(size(gopt_in), kind(n))

@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, January 25, 2024 PM08:04:54
+! Last Modified: Saturday, January 27, 2024 AM02:36:17
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -180,6 +180,7 @@ real(RP) :: xdrop(size(x))
 real(RP) :: xosav(size(x))
 real(RP) :: xpt(size(x), npt)
 real(RP) :: zmat(npt, npt - size(x) - 1)
+real(RP), parameter :: trtol = 1.0E-2_RP
 
 ! Sizes.
 n = int(size(x), kind(n))
@@ -288,7 +289,8 @@ info = MAXTR_REACHED
 ! BOBYQA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 do tr = 1, maxtr
     ! Generate the next trust region step D.
-    call trsbox(delta, gopt, hq, pq, sl, su, xpt(:, kopt), xpt, crvmin, d)
+    !call trsbox(delta, gopt, hq, pq, sl, su, xpt(:, kopt), xpt, crvmin, d)
+    call trsbox(delta, gopt, hq, pq, sl, su, trtol, xpt(:, kopt), xpt, crvmin, d)
     dnorm = min(delta, norm(d))
     shortd = (dnorm < HALF * rho)
 
