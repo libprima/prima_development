@@ -311,7 +311,7 @@ glag = bmat(:, knew) + hess_mul(xopt, xpt, pqlag)
 ! In case GLAG contains NaN, set D to a displacement from XOPT to XPT(:, KNEW) and return. Powell's
 ! code does not have this, and D may be NaN in the end. Note that it is crucial to ensure that a
 ! geometry step is nonzero.
-if (is_nan(sum(abs(glag)))) then
+if (.not. is_finite(sum(abs(glag)))) then
     d = xpt(:, knew) - xopt
     d = min(HALF, delbar / norm(d)) * d  ! Since XPT respects the bounds, so does XOPT + D.
     return
