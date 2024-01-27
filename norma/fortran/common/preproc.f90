@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Wednesday, January 24, 2024 PM04:11:03
+! Last Modified: Saturday, January 27, 2024 AM10:51:30
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -378,7 +378,10 @@ if (present(honour_x0)) then
         rhoend = min(rhoend, rhobeg)  ! This may update RHOEND slightly.
     end if
 end if
-rhoend = min(rhoend, rhobeg)
+!rhoend = min(rhoend, rhobeg)
+rhobeg = max(rhobeg, EPS)
+rhoend = min(max(rhoend, EPS), rhobeg)
+!rhoend = min(rhoend, rhobeg)
 
 ! Validate CTOL (it can be 0)
 if (present(ctol)) then
