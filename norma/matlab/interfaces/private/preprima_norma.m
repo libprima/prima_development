@@ -1222,9 +1222,10 @@ options.rhobeg = double(max(options.rhobeg, eps));
 % Validate options.rhoend
 validated = false;
 if isfield(options, 'rhoend')
-    if ~isrealscalar(options.rhoend) || options.rhoend > options.rhobeg || isnan(options.rhoend)
+%    if ~isrealscalar(options.rhoend) || options.rhoend > options.rhobeg || isnan(options.rhoend)
+    if ~isrealscalar(options.rhoend) || options.rhoend < 0 || options.rhoend > options.rhobeg || isnan(options.rhoend)
         wid = sprintf('%s:InvalidRhoend', invoker);
-        wmsg = sprintf('%s: invalid rhoend; we should have rhobeg >= rhoend > 0; it is set to min(0.1*rhobeg, %g).', invoker, rhoend);
+        wmsg = sprintf('%s: invalid rhoend; we should have rhobeg >= rhoend >= 0; it is set to min(0.1*rhobeg, %g).', invoker, rhoend);
         warning(wid, '%s', wmsg);
         warnings = [warnings, wmsg];
     else
@@ -1240,7 +1241,7 @@ options.rhoend = min(options.rhobeg, options.rhoend);
 % Validate options.ftarget
 validated = false;
 if isfield(options, 'ftarget')
-    if ~isrealscalar(options.ftarget) || isnan(options.ftarget)
+    if ~isrealscalar(options.ftarget)
         wid = sprintf('%s:InvalidFtarget', invoker);
         wmsg = sprintf('%s: invalid ftarget; it should be a real number; it is set to %g.', invoker, ftarget);
         warning(wid, '%s', wmsg);
@@ -1253,6 +1254,9 @@ if ~validated % options.ftarget has not got a valid value yet
     options.ftarget = ftarget;
 end
 options.ftarget = double(options.ftarget);
+if isnan(options.ftarget)
+    options.ftarget = -Inf;
+end
 
 % Validate options.ctol
 validated = false;
@@ -1599,9 +1603,9 @@ validated = false;
 if isfield(options, 'eta1')
     if ~isrealscalar(options.eta1) || options.eta1 < 0 || options.eta1 >= 1
         wid = sprintf('%s:InvalidEta1', invoker);
-        if isfield(options, 'eta2') && isrealscalar(options.eta2) && options.eta2 > 0 && options.eta2 <= 1
+        if isfield(options, 'eta2') && isrealscalar(options.eta2) && options.eta2 >= 0 && options.eta2 < 1
         % The user provides a correct eta2; we define eta1 as follows.
-            options.eta1 = max(eps, options.eta2/7);
+            options.eta1 = options.eta2/7;
             wmsg = sprintf('%s: invalid eta1; it should be in the interval [0, 1) and not more than eta2; it is set to %g.', invoker, options.eta1);
             validated = true;
         else
@@ -1623,7 +1627,7 @@ options.eta1 = double(options.eta1);
 % Validate options.eta2
 validated = false;
 if isfield(options, 'eta2')
-    if ~isrealscalar(options.eta2) || (isnan(options.eta1) && options.eta2 < 0) || options.eta2 < options.eta1 || options.eta2 > 1
+    if ~isrealscalar(options.eta2) || (isnan(options.eta1) && options.eta2 < 0) || options.eta2 < options.eta1 || options.eta2 >= 1
         wid = sprintf('%s:InvalidEta2', invoker);
         if user_eta1_correct
         % The user provides a correct eta1; we define eta2 as follows.
