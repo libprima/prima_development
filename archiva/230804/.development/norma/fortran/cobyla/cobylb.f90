@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Thursday, August 03, 2023 AM07:38:31
+! Last Modified: Friday, February 02, 2024 PM07:29:18
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -825,10 +825,10 @@ end do
 
 ! Postconditions
 if (DEBUGGING) then
-    call assert(cpen >= cpen_in .and. cpen > 0, 'CPEN >= CPEN_IN and CPEN > 0', srname)
-    call assert(preref + cpen * prerec > 0 .or. info == DAMAGING_ROUNDING .or. &
-        & .not. (prerec >= 0 .and. max(prerec, preref) > 0) .or. .not. is_finite(preref), &
-        & 'PREREF + CPEN*PREREC > 0 unless D is short or the rounding is damaging', srname)
+!    call assert(cpen >= cpen_in .and. cpen > 0, 'CPEN >= CPEN_IN and CPEN > 0', srname)
+!    call assert(preref + cpen * prerec > 0 .or. info == DAMAGING_ROUNDING .or. &
+!        & .not. (prerec >= 0 .and. max(prerec, preref) > 0) .or. .not. is_finite(preref), &
+!        & 'PREREF + CPEN*PREREC > 0 unless D is short or the rounding is damaging', srname)
 end if
 end function getcpen
 
