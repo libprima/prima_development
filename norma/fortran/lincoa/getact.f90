@@ -12,7 +12,7 @@ module getact_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, August 25, 2023 AM12:29:13
+! Last Modified: Wednesday, February 14, 2024 PM01:56:54
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -204,7 +204,8 @@ ddsav = TWO * gg  ! By Powell. This value is used at iteration 1 to test whether
 ! number of iterations, which is never reached in our tests (indeed, even 2*N cannot be reached).
 ! The iteration counter ITER never appears in the code of the iterations, as its purpose is merely
 ! to impose an upper bound on the number of iterations.
-maxiter = 2_IK * (m + n)
+!maxiter = 2_IK * (m + n)
+maxiter = int(min(10**min(4, range(0_IK)), 2 * int(m + n)), IK)
 do iter = 1, maxiter
     ! When NACT == N, exit with PSD = 0. Indeed, with a correctly implemented matrix product, the
     ! lines below this IF should render DD = 0 and trigger an exit. We make it explicit for clarity.
