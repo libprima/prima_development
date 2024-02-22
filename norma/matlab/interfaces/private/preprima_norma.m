@@ -1865,6 +1865,7 @@ end
 
 % Revise options.rhobeg and options.rhoend according to the selected solver.
 % For the moment, only BOBYQA needs such a revision.
+rho_ratio = options.rhoend/options.rhobeg;
 if strcmp(solver, 'bobyqa_norma') && options.rhobeg > min(probinfo.refined_data.ub-probinfo.refined_data.lb)/2
     options.rhobeg = max(eps, min(probinfo.refined_data.ub-probinfo.refined_data.lb)/4);
     %options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));
