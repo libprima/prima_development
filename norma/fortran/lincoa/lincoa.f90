@@ -36,7 +36,7 @@ module lincoa_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, January 25, 2024 AM11:12:14
+! Last Modified: Thursday, February 22, 2024 PM08:58:24
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -409,7 +409,7 @@ end if
 if (present(rhoend)) then
     rhoend_loc = rhoend
 elseif (rhobeg_loc > 0) then
-    rhoend_loc = max(EPS, min(TENTH * rhobeg_loc, RHOEND_DFT))
+    rhoend_loc = max(EPS, min((RHOEND_DFT / RHOBEG_DFT) * rhobeg_loc, RHOEND_DFT))
 else
     rhoend_loc = RHOEND_DFT
 end if

@@ -42,7 +42,7 @@ module cobyla_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Friday, August 04, 2023 PM08:27:54
+! Last Modified: Thursday, February 22, 2024 PM09:00:46
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -505,7 +505,7 @@ end if
 if (present(rhoend)) then
     rhoend_loc = rhoend
 elseif (rhobeg_loc > 0) then
-    rhoend_loc = max(EPS, min(TENTH * rhobeg_loc, RHOEND_DFT))
+    rhoend_loc = max(EPS, min((RHOEND_DFT / RHOBEG_DFT) * rhobeg_loc, RHOEND_DFT))
 else
     rhoend_loc = RHOEND_DFT
 end if

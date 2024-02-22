@@ -19,7 +19,7 @@ module uobyqa_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, June 17, 2023 AM10:47:03
+! Last Modified: Thursday, February 22, 2024 PM09:00:22
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -240,7 +240,7 @@ end if
 if (present(rhoend)) then
     rhoend_loc = rhoend
 elseif (rhobeg_loc > 0) then
-    rhoend_loc = max(EPS, min(TENTH * rhobeg_loc, RHOEND_DFT))
+    rhoend_loc = max(EPS, min((RHOEND_DFT / RHOBEG_DFT) * rhobeg_loc, RHOEND_DFT))
 else
     rhoend_loc = RHOEND_DFT
 end if

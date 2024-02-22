@@ -893,6 +893,7 @@ end
 maxfun = 500*lenx0;
 rhobeg = 1; % The default rhobeg and rhoend will be revised if solver = 'bobyqa_norma'
 rhoend = 1e-6;
+rho_ratio = rhoend / rhobeg; 
 ftarget = -inf;
 ctol = sqrt(eps); % Tolerance for constraint violation; a point with a constraint violation at most ctol is considered feasible
 cweight = 1e8;  % The weight of constraint violation in the selection of the returned x
@@ -1071,11 +1072,13 @@ options.scale = logical(options.scale);
 % Revise default rhobeg and rhoend according to options.scale and solver
 if options.scale
     rhobeg = 0.5;  % This value cannot be bigger than 1. Otherwise, BOBYQA will complain.
-    rhoend = 1e-6;
+    %rhoend = 1e-6;
+    rhoend = max(eps, min(rho_ratio*rhobeg, rhoend));
 end
 if strcmpi(solver, 'bobyqa_norma') && ~options.scale
     rhobeg = max(eps, min(rhobeg, min(ub-lb)/4));
-    rhoend = max(eps, min(0.1*rhobeg, rhoend));
+    %rhoend = max(eps, min(0.1*rhobeg, rhoend));
+    rhoend = max(eps, min(rho_ratio*rhobeg, rhoend));
 end
 
 
@@ -1225,7 +1228,7 @@ if isfield(options, 'rhoend')
 %    if ~isrealscalar(options.rhoend) || options.rhoend > options.rhobeg || isnan(options.rhoend)
     if ~isrealscalar(options.rhoend) || options.rhoend < 0 || options.rhoend > options.rhobeg || isnan(options.rhoend)
         wid = sprintf('%s:InvalidRhoend', invoker);
-        wmsg = sprintf('%s: invalid rhoend; we should have rhobeg >= rhoend >= 0; it is set to min(0.1*rhobeg, %g).', invoker, rhoend);
+        wmsg = sprintf('%s: invalid rhoend; we should have rhobeg >= rhoend >= 0; it is set to min(rho_ratio*rhobeg, %g).', invoker, rhoend);
         warning(wid, '%s', wmsg);
         warnings = [warnings, wmsg];
     else
@@ -1233,7 +1236,8 @@ if isfield(options, 'rhoend')
     end
 end
 if ~validated % options.rhoend has not got a valid value yet
-    options.rhoend = min(0.1*options.rhobeg, rhoend);
+    %options.rhoend = min(0.1*options.rhobeg, rhoend);
+    options.rhoend = min(rho_ratio*options.rhobeg, rhoend);
 end
 options.rhoend = double(max(options.rhoend, eps));
 options.rhoend = min(options.rhobeg, options.rhoend);
@@ -1863,7 +1867,8 @@ end
 % For the moment, only BOBYQA needs such a revision.
 if strcmp(solver, 'bobyqa_norma') && options.rhobeg > min(probinfo.refined_data.ub-probinfo.refined_data.lb)/2
     options.rhobeg = max(eps, min(probinfo.refined_data.ub-probinfo.refined_data.lb)/4);
-    options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));
+    %options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));
+    options.rhoend = max(eps, min(rho_ratio*options.rhobeg, options.rhoend));
     if ismember('rhobeg', probinfo.user_options_fields) || ismember('rhoend', probinfo.user_options_fields)
         wid = sprintf('%s:InvalidRhobeg', invoker);
         wmsg = sprintf('%s: rhobeg is set to %g and rhoend to %g according to the selected solver bobyqa_norma, which requires rhoend <= rhobeg <= min(ub-lb)/2.', invoker, options.rhobeg, options.rhoend);
@@ -1976,7 +1981,8 @@ if isfield(options, 'honour_x0') && ~options.honour_x0  % In this case, we respe
     %x0(ubx) = ub(ubx);
     %options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
     %if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
-    %    options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    %    %options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    %    options.rhoend = max(eps, min(rho_ratio*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
     %    if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
     %        wid = sprintf('%s:ReviseRhobeg', invoker);
     %        wmsg = sprintf('%s: rhobeg is revised to %g and rhoend to %g so that the distance between x0 and the inactive bounds is at least rhobeg.', invoker, options.rhobeg, options.rhoend);
@@ -2013,7 +2019,8 @@ x0(lbx) = lb(lbx);
 x0(ubx) = ub(ubx);
 options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
 if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
-    options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    %options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    options.rhoend = max(eps, min(rho_ratio*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
     if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
         wid = sprintf('%s:ReviseRhobeg', invoker);
         wmsg = sprintf('%s: rhobeg is revised to %g and rhoend to %g so that the distance between x0 and the inactive bounds is at least rhobeg.', invoker, options.rhobeg, options.rhoend);
