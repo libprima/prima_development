@@ -893,7 +893,7 @@ end
 maxfun = 500*lenx0;
 rhobeg = 1; % The default rhobeg and rhoend will be revised if solver = 'bobyqa_norma'
 rhoend = 1e-6;
-rho_ratio = rhoend / rhobeg; 
+rho_ratio = rhoend / rhobeg;
 ftarget = -inf;
 ctol = sqrt(eps); % Tolerance for constraint violation; a point with a constraint violation at most ctol is considered feasible
 cweight = 1e8;  % The weight of constraint violation in the selection of the returned x
@@ -2020,6 +2020,7 @@ x0(ubx) = ub(ubx);
 options.rhobeg = max(eps, min([options.rhobeg; x0(~lbx) - lb(~lbx); ub(~ubx) - x0(~ubx)]));
 if rhobeg_old - options.rhobeg > eps*max(1, rhobeg_old)
     %options.rhoend = max(eps, min(0.1*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
+    rho_ratio = options.rhoend / rhobeg_old;
     options.rhoend = max(eps, min(rho_ratio*options.rhobeg, options.rhoend));  % We do not revise rhoend unless rhobeg is revised
     if ismember('rhobeg', user_options_fields) || ismember('rhoend', user_options_fields)
         wid = sprintf('%s:ReviseRhobeg', invoker);

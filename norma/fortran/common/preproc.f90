@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Thursday, February 22, 2024 PM08:56:30
+! Last Modified: Thursday, February 22, 2024 PM09:43:24
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -369,7 +369,7 @@ if (present(honour_x0)) then
     x0(trueloc(ubx)) = xu(trueloc(ubx))
     rhobeg = max(EPS, minval([rhobeg, x0(falseloc(lbx)) - xl(falseloc(lbx)), xu(falseloc(ubx)) - x0(falseloc(ubx))]))
     if (rhobeg_old - rhobeg > EPS * max(ONE, rhobeg_old)) then
-        rhoend = max(EPS, min((RHOEND_DFT / RHOBEG_DFT) * rhobeg, rhoend)) ! We do not revise RHOEND unless RHOBEG is truly revised.
+        rhoend = max(EPS, min((rhoend / rhobeg_old) * rhobeg, rhoend)) ! We do not revise RHOEND unless RHOBEG is truly revised.
         if (has_rhobeg) then
             call warning(solver//'_norma', 'RHOBEG is revised to '//num2str(rhobeg)//' and RHOEND to '// &
                 & ' so that the distance between X0 and the inactive bounds is at least RHOBEG')
