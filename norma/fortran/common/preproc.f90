@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, February 25, 2024 PM06:04:43
+! Last Modified: Sunday, February 25, 2024 PM07:53:41
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -145,7 +145,8 @@ if (maxfun < min_maxfun) then
         maxfun = min_maxfun
     else  ! We assume that non-positive values of MAXFUN are produced by overflow.
 !        maxfun = huge(maxfun)
-        maxfun = huge(maxfun) - 1
+        !maxfun = huge(maxfun) - 1
+        maxfun = (huge(maxfun) - 1) / 2
     end if
     call warning(solver, 'Invalid MAXFUN; it should be at least '//min_maxfun_str//'; it is set to '//num2str(maxfun))
 end if
