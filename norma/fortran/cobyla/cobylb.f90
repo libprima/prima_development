@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Friday, February 02, 2024 PM07:27:42
+! Last Modified: Sunday, February 25, 2024 PM06:06:33
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -293,7 +293,8 @@ gamma3 = max(ONE, min(0.75_RP * gamma2, 1.5_RP))
 ! function evaluations unless the trust-region step is short or the trust-region subproblem solver
 ! fails but the geometry step is not invoked. Thus the following MAXTR is unlikely to be reached.
 !maxtr = max(maxfun, 2_IK * maxfun)  ! MAX: precaution against overflow, which will make 2*MAXFUN < 0.
-maxtr = huge(maxtr)
+!maxtr = huge(maxtr)
+maxtr = huge(maxtr) - 1
 info = MAXTR_REACHED
 
 ! Begin the iterative procedure.

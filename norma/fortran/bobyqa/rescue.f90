@@ -18,7 +18,7 @@ module rescue_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, October 12, 2023 PM12:06:05
+! Last Modified: Sunday, February 25, 2024 PM05:41:56
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -321,7 +321,7 @@ nprov = npt - 1_IK
 if (2.0 * log10(real(npt)) < range(maxiter)) then
     maxiter = npt * npt
 else
-    maxiter = huge(maxiter) - 2_IK
+    maxiter = huge(maxiter) - 1_IK
 end if
 do iter = 1, maxiter
     ! !DO WHILE (ANY(SCORE > 0) .AND. NPROV > 1)   ! WHILE version.

@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, January 25, 2024 PM08:06:08
+! Last Modified: Sunday, February 25, 2024 PM06:06:02
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -214,7 +214,8 @@ gamma3 = max(ONE, min(0.75_RP * gamma2, 1.5_RP))
 ! function evaluations unless the trust-region step is short or fails to reduce the trust-region
 ! model but the geometry step is not invoked. Thus the following MAXTR is unlikely to be reached.
 !maxtr = max(maxfun, 2_IK * maxfun)  ! MAX: precaution against overflow, which will make 2*MAXFUN < 0.
-maxtr = huge(maxtr)
+!maxtr = huge(maxtr)
+maxtr = huge(maxtr) - 1
 info = MAXTR_REACHED
 
 ! Begin the iterative procedure.
