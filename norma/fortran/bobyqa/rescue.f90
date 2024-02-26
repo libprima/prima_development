@@ -18,7 +18,7 @@ module rescue_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, February 26, 2024 PM10:25:18
+! Last Modified: Monday, February 26, 2024 PM11:22:59
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -323,7 +323,7 @@ nprov = npt - 1_IK
 !else
 !    maxiter = huge(maxiter) - 1_IK
 !end if
-maxiter = int(min(10**range(0_IK), int(npt)**2), IK)
+maxiter = int(min(10**min(range(0_IK), range(0)), int(npt)**2), IK)
 do iter = 1, maxiter
     ! !DO WHILE (ANY(SCORE > 0) .AND. NPROV > 1)   ! WHILE version.
     ! !IF (ALL(SCORE <= 0) .AND. NPROV <= 0) THEN ! Powell's code. May not take any provisional point.
