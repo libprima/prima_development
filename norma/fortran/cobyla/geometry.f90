@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Thursday, August 03, 2023 AM09:51:43
+! Last Modified: Saturday, March 02, 2024 AM02:05:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -434,7 +434,8 @@ vsigj = ONE / sqrt(sum(simi(jdrop, :)**2))
 ! FACTOR_ALPHA < FACTOR_GAMMA < FACTOR_BETA, D improves the geometry of the simplex as per (14) of
 ! the COBYLA paper. This also explains why this subroutine does not replace DELTA with
 ! DELBAR = MAX(MIN(TENTH * SQRT(MAXVAL(DISTSQ)), HALF * DELTA), RHO) as in NEWUOA.
-d = factor_gamma * delta * (vsigj * simi(jdrop, :))
+!d = factor_gamma * delta * (vsigj * simi(jdrop, :))
+d = (vsigj * simi(jdrop, :)) * delta * factor_gamma
 
 ! The code below chooses the direction of D according to an approximation of the merit function.
 ! See (17) of the COBYLA paper and  line 225 of Powell's cobylb.f.
