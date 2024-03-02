@@ -8,7 +8,7 @@ module selectx_mod
 !
 ! Started: September 2021
 !
-! Last Modified: Wednesday, August 02, 2023 AM11:24:31
+! Last Modified: Saturday, March 02, 2024 AM11:19:20
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -58,11 +58,12 @@ real(RP), intent(inout), optional :: confilt(:, :)  ! (M, MAXFILT)
 
 ! Local variables
 character(len=*), parameter :: srname = 'SAVEFILT'
+integer(IK) :: i
 integer(IK) :: index_to_keep(size(ffilt))
+integer(IK) :: kworst
 integer(IK) :: m
 integer(IK) :: maxfilt
 integer(IK) :: n
-integer(IK) :: kworst
 logical :: keep(nfilt)
 real(RP) :: cfilt_shifted(size(ffilt))
 real(RP) :: cref
@@ -121,6 +122,11 @@ end if
 !====================!
 
 ! Return immediately if any column of XFILT is better than X.
+do i = 1, nfilt
+    if (ffilt(i) <= f .and. cfilt(i) <= cstrv) then
+        return
+    end if
+end do
 if (any(isbetter(ffilt(1:nfilt), cfilt(1:nfilt), f, cstrv, ctol))) then
     return
 end if
