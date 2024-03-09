@@ -8,7 +8,7 @@ module consts_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, February 25, 2024 PM06:04:18
+! Last Modified: Saturday, March 09, 2024 AM11:26:56
 !--------------------------------------------------------------------------------------------------!
 
 !--------------------------------------------------------------------------------------------------!
@@ -143,11 +143,13 @@ integer, parameter :: MINE = minexponent(ZERO)
 integer, parameter :: MAXE = maxexponent(ZERO)
 
 ! TINYCV is used in LINCOA. Powell set TINYCV = 1.0D-60. What about setting TINYCV = REALMIN?
-real(RP), parameter :: TINYCV = real(radix(ZERO), RP)**max(-200, MINE)  ! Normally, RADIX = 2.
+!real(RP), parameter :: TINYCV = real(radix(ZERO), RP)**max(-200, MINE)  ! Normally, RADIX = 2.
+real(RP), parameter :: TINYCV = 10.0_RP**max(-60, -range(0.0_RP)) ! Normally, RADIX = 2.
 ! FUNCMAX is used in the moderated extreme barrier. All function values are projected to the
 ! interval [-FUNCMAX, FUNCMAX] before passing to the solvers, and NaN is replaced with FUNCMAX.
 ! CONSTRMAX plays a similar role for constraints.
-real(RP), parameter :: FUNCMAX = real(radix(ZERO), RP)**min(100, MAXE / 2)  ! Normally, RADIX = 2.
+!real(RP), parameter :: FUNCMAX = real(radix(ZERO), RP)**min(100, MAXE / 2)  ! Normally, RADIX = 2.
+real(RP), parameter :: FUNCMAX = 10.0_RP**max(4, min(30, floor(real(range(0.0_RP)) / 2.0)))  ! Normally, RADIX = 2.
 real(RP), parameter :: CONSTRMAX = FUNCMAX
 ! Any bound with an absolute value at least BOUNDMAX is considered as no bound.
 real(RP), parameter :: BOUNDMAX = QUART * REALMAX

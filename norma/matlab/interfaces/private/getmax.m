@@ -30,11 +30,15 @@ end
 radix = 2;
 if strcmpi(precision, 'single')
     maxfloat = realmax('single') ;
-    maxexponent = 128;
+    %maxexponent = 128;
+    minfloat = realmin('single');
 else  % Even if precision = 'quadruple'
     maxfloat = realmax('double') ;
-    maxexponent = 1024;
+    %maxexponent = 1024;
+    minfloat = realmin('double');
 end
+
+maxpow10 = fix(min(log10(maxfloat), -log10(minfloat)));
 
 % The following values are intended to be consistent with BOUNDMAX, FUNCMAX, and CONSTRMAX defined
 % in the Fortran code.
@@ -44,7 +48,8 @@ case {'real'}
 case {'bound'}
     maxnum = 0.25 * maxfloat;
 case {'fun', 'func', 'function', 'con', 'constr', 'constraint'}
-    maxnum = radix^min(100, maxexponent / 2);
+    %maxnum = radix^min(100, maxexponent / 2);
+    maxnum = 10^min(30, floor(maxpow10 / 2));
 otherwise
     % Private/unexpected error
     error(sprintf('%s:InvalidInput', funname), '%s: UNEXPECTED ERROR: invalid data_type received.', funname);
