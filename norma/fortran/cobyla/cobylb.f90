@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Sunday, February 25, 2024 PM06:06:33
+! Last Modified: Saturday, March 09, 2024 PM09:22:35
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -357,7 +357,7 @@ do tr = 1, maxtr
     ! Evaluate PREREM, which is the predicted reduction in the merit function.
     ! In theory, PREREM >= 0 and it is 0 iff CPEN = 0 = PREREF. This may not be true numerically.
     prerem = preref + cpen * prerec
-    trfail = (.not. prerem > 1.0E-5_RP * min(cpen, ONE) * rho**2)  ! PREREM is tiny/negative or NaN.
+    trfail = (.not. prerem > 1.0E-6_RP * min(cpen, ONE) * rho)  ! PREREM is tiny/negative or NaN.
 
     if (shortd .or. trfail) then
         ! Reduce DELTA if D is short or D fails to render PREREM > 0. The latter can happen due to
