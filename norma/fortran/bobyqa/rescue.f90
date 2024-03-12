@@ -18,7 +18,7 @@ module rescue_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Monday, February 26, 2024 PM11:22:59
+! Last Modified: Tuesday, March 12, 2024 PM01:00:24
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -715,7 +715,8 @@ vlag(knew) = vlag(knew) - ONE
 ! only one nonzero at ZMAT(KNEW, 1). Entries of ZMAT are treated as 0 if the moduli are at most ZTEST.
 ztest = 1.0E-20_RP * maxval(abs(zmat))
 do j = 2, npt - n - 1_IK
-    if (abs(zmat(knew, j)) > ztest) then
+    !if (abs(zmat(knew, j)) > ztest) then
+    if (abs(zmat(knew, j)) > 1.0E-20 * maxval(abs(zmat))) then
         grot = planerot(zmat(knew, [1_IK, j]))
         zmat(:, [1_IK, j]) = matprod(zmat(:, [1_IK, j]), transpose(grot))
     end if
