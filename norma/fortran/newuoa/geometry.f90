@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Wednesday, June 07, 2023 PM09:05:10
+! Last Modified: Tuesday, March 12, 2024 PM09:56:00
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -203,6 +203,7 @@ real(RP), intent(in) :: zmat(:, :)  ! ZMAT(NPT, NPT - N - 1)
 real(RP) :: d(size(xpt, 1))     ! D(N)
 
 ! Local variables
+real(RP) :: scaling
 character(len=*), parameter :: srname = 'GEOSTEP'
 integer(IK) :: n
 integer(IK) :: npt
@@ -268,6 +269,12 @@ if (denrat <= 0.8_RP) then
     if (abs(alpha * beta + vlag(knew)**2) >= abs(denom) .or. is_nan(denom)) then
         d = dden
     end if
+end if
+
+if (.not. (sum(abs(d)) > 0 .and. is_finite(sum(abs(d))))) then
+    d = xpt(:, knew) - xpt(:, kopt)
+    scaling = delbar / norm(d)
+    d = max(0.6_RP * scaling, min(HALF, scaling)) * d
 end if
 
 !====================!
