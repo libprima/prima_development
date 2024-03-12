@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, August 25, 2023 AM12:27:59
+! Last Modified: Tuesday, March 12, 2024 PM07:21:46
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -442,7 +442,7 @@ end if
 
 ! In case S contains NaN, replace it with a displacement from XPT(:, KNEW) to XOPT. Powell's code
 ! does not have this.
-if (is_nan(sum(abs(s)))) then
+if (.not. (is_finite(sum(abs(s))) .and. sum(abs(s)) > 0)) then
     s = xpt(:, knew) - xopt
     scaling = delbar / norm(s)
     s = max(0.6_RP * scaling, min(HALF, scaling)) * s

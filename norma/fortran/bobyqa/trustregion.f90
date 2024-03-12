@@ -8,7 +8,7 @@ module trustregion_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, February 04, 2024 AM09:52:31
+! Last Modified: Tuesday, March 12, 2024 PM07:49:34
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -79,6 +79,7 @@ real(RP), intent(out) :: crvmin
 real(RP), intent(out) :: d(:)  ! D(N)
 
 ! Local variables
+real(RP) :: dold(size(d))
 character(len=*), parameter :: srname = 'TRSBOX'
 integer(IK) :: iact
 integer(IK) :: n
@@ -352,7 +353,12 @@ do iter = 1, maxiter
         ggsav = gredsq
         gnew = gnew + stplen * hs
         gredsq = sum(gnew(trueloc(xbdi == 0))**2)
+        dold = d
         d = d + stplen * s
+        if (.not. is_finite(sum(abs(d)))) then
+            d = dold
+            exit
+        end if
         sdec = max(stplen * (ggsav - HALF * stplen * shs), ZERO)
         qred = qred + sdec
     end if
@@ -531,13 +537,21 @@ do iter = 1, maxiter
 
     ! Update GNEW, D and HDRED. If the angle of the alternative iteration is restricted by a bound
     ! on a free variable, that variable is fixed at the bound.
-    cth = (ONE - hangt * hangt) / (ONE + hangt * hangt)
-    sth = (hangt + hangt) / (ONE + hangt * hangt)
+    !cth = (ONE - hangt * hangt) / (ONE + hangt * hangt)
+    !sth = (hangt + hangt) / (ONE + hangt * hangt)
+    cth = min((ONE - hangt**2) / (ONE + hangt**2), ONE - hangt**2)
+    sth = min((hangt + hangt) / (ONE + hangt**2), hangt + hangt)
     gnew = gnew + (cth - ONE) * hdred + sth * hs
     if (iact >= 1 .and. iact <= n) then  ! IACT == 0 is possible, but IACT > N should never happen.
         diact = d(iact)
     end if
+    dold = d
     d(trueloc(xbdi == 0)) = cth * d(trueloc(xbdi == 0)) + sth * s(trueloc(xbdi == 0))
+    if (.not. is_finite(sum(abs(d)))) then
+        d = dold
+        exit
+    end if
+
     hdred = cth * hdred + sth * hs
     qred = qred + sdec
     if (iact >= 1 .and. iact <= n .and. hangt >= hangt_bd) then  ! D(IACT) reaches lower/upper bound.

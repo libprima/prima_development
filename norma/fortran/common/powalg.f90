@@ -21,7 +21,7 @@ module powalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, March 10, 2024 AM12:34:21
+! Last Modified: Tuesday, March 12, 2024 PM08:53:28
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -1345,8 +1345,10 @@ else
     end if
     ! Now update ZMAT(:, [ja, jb]) according to (4.19)--(4.20) of the NEWUOA paper.
     temp = zmat(knew, jb) / denom
-    tempa = temp * beta
-    tempb = temp * tau
+    !tempa = temp * beta
+    !tempb = temp * tau
+    tempa = (beta / denom) * zmat(knew, jb)
+    tempb = (tau / denom) * zmat(knew, jb)
     temp = zmat(knew, ja)
     scala = ONE / sqrt(abs(beta) * temp**2 + tau**2)  ! 1/SQRT(ZETA) in (4.19)-(4.20) of NEWUOA paper
     scalb = scala * sqrtdn
