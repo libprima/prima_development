@@ -18,7 +18,7 @@ module rescue_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, March 12, 2024 PM01:00:24
+! Last Modified: Thursday, March 14, 2024 PM02:26:32
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -473,6 +473,8 @@ if (nprov > 0) then
         ! and IQ entries.
         xp = ZERO
         xq = ZERO
+
+        x = xpt(:, kpt)
         xpt(:, kpt) = ZERO
         if (ip > 0 .and. iq > 0) then
             xp = ptsaux(1, ip)
@@ -485,6 +487,11 @@ if (nprov > 0) then
         elseif (iq > 0) then  ! IP == 0, IQ > 0
             xq = ptsaux(2, iq)
             xpt(iq, kpt) = xq
+        end if
+
+        if (sum(abs(x - xpt(:, kpt))) <= 1.0E-2 * delta .or. .not. is_finite(sum(abs(xpt(:, kpt))))) then
+            xpt(:, kpt) = x
+            cycle
         end if
 
         ! Calculate F at the new interpolation point, and set MODERR to the factor that is going to

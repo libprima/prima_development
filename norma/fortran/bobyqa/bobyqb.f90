@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, March 10, 2024 PM03:34:34
+! Last Modified: Thursday, March 14, 2024 PM02:23:27
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -82,7 +82,7 @@ use, non_intrinsic :: debug_mod, only : assert!, wassert, validate
 use, non_intrinsic :: evaluate_mod, only : evaluate
 use, non_intrinsic :: history_mod, only : savehist, rangehist
 use, non_intrinsic :: infnan_mod, only : is_nan, is_finite, is_posinf
-use, non_intrinsic :: infos_mod, only : INFO_DFT, SMALL_TR_RADIUS, MAXTR_REACHED
+use, non_intrinsic :: infos_mod, only : INFO_DFT, SMALL_TR_RADIUS, MAXTR_REACHED, DAMAGING_ROUNDING
 use, non_intrinsic :: linalg_mod, only : norm
 use, non_intrinsic :: message_mod, only : retmsg, rhomsg, fmsg
 use, non_intrinsic :: pintrf_mod, only : OBJ
@@ -142,6 +142,7 @@ integer(IK) :: maxxhist
 integer(IK) :: n
 integer(IK) :: subinfo
 integer(IK) :: tr
+logical :: rescued
 logical :: accurate_mod
 logical :: adequate_geo
 logical :: bad_trstep
@@ -323,6 +324,7 @@ do tr = 1, maxtr
         x = xinbd(xbase, xpt(:, kopt) + d, xl, xu, sl, su)  ! X = XBASE + XOPT + D without rounding.
         call evaluate(calfun, x, f)
         nf = nf + 1_IK
+        rescued = .false.
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, 'Trust region', iprint, nf, delta, f, x)
@@ -361,6 +363,10 @@ do tr = 1, maxtr
         ! improve the performance, especially when pursing high-precision solutions..
         vlag = calvlag(kopt, bmat, d, xpt, zmat)
         den = calden(kopt, bmat, d, xpt, zmat)
+        if (rescued) then
+            info = DAMAGING_ROUNDING
+            exit
+        end if
         if (ximproved .and. .not. (is_finite(sum(abs(vlag))) .and. any(den > maxval(vlag(1:npt)**2)))) then
             ! Below are some alternatives conditions for calling RESCUE. They perform fairly well.
             ! !if (.false.) then  ! Do not call RESCUE at all.
@@ -370,6 +376,7 @@ do tr = 1, maxtr
             ! !if (.not. any(den > maxval(vlag(1:npt)**2))) then
             call rescue(calfun, solver, iprint, maxfun, delta, ftarget, xl, xu, kopt, nf, fhist, &
                 & fval, gopt, hq, pq, sl, su, xbase, xhist, xpt, bmat, zmat, subinfo)
+            rescued = .true.
             if (subinfo /= INFO_DFT) then
                 info = subinfo
                 exit
@@ -500,9 +507,14 @@ do tr = 1, maxtr
         ! KNEW_GEO, the step D will become improper as it was chosen according to the old KNEW_GEO.
         vlag = calvlag(kopt, bmat, d, xpt, zmat)
         den = calden(kopt, bmat, d, xpt, zmat)
+        if (rescued) then
+            info = DAMAGING_ROUNDING
+            exit
+        end if
         if (.not. (is_finite(sum(abs(vlag))) .and. den(knew_geo) > HALF * vlag(knew_geo)**2)) then
             call rescue(calfun, solver, iprint, maxfun, delta, ftarget, xl, xu, kopt, nf, fhist, &
                 & fval, gopt, hq, pq, sl, su, xbase, xhist, xpt, bmat, zmat, subinfo)
+            rescued = .true.
             if (subinfo /= INFO_DFT) then
                 info = subinfo
                 exit
@@ -515,6 +527,7 @@ do tr = 1, maxtr
             x = xinbd(xbase, xpt(:, kopt) + d, xl, xu, sl, su)  ! X = XBASE + XOPT + D without rounding.
             call evaluate(calfun, x, f)
             nf = nf + 1_IK
+            rescued = .false.
 
             ! Print a message about the function evaluation according to IPRINT.
             call fmsg(solver, 'Geometry', iprint, nf, delbar, f, x)

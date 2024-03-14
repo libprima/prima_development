@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Saturday, March 02, 2024 AM02:05:50
+! Last Modified: Thursday, March 14, 2024 PM02:30:19
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -82,9 +82,12 @@ end if
 ! "best" point, [e_1, ..., e_n] is an orthogonal matrix, and L is a constant in the order of DELTA.
 ! This simplex is optimal in the sense that the interpolation system has the minimal condition
 ! number, i.e., one. For this simplex, the distance from V_{N+1} to its opposite face is L/SQRT{N}.
-vsig = ONE / sqrt(sum(simi**2, dim=2))
-veta = sqrt(sum(sim(:, 1:n)**2, dim=1))
-adequate_geo = all(vsig >= factor_alpha * delta) .and. all(veta <= factor_beta * delta)
+!vsig = ONE / sqrt(sum(simi**2, dim=2))
+!veta = sqrt(sum(sim(:, 1:n)**2, dim=1))
+!adequate_geo = all(vsig >= factor_alpha * delta) .and. all(veta <= factor_beta * delta)
+vsig = ONE / sqrt(sum((simi * delta)**2, dim=2))
+veta = sqrt(sum((sim(:, 1:n) / delta)**2, dim=1))
+adequate_geo = all(vsig >= factor_alpha) .and. all(veta <= factor_beta)
 
 !====================!
 !  Calculation ends  !
@@ -327,15 +330,19 @@ end if
 
 ! Calculate the values of sigma and eta.
 ! VSIG(J) (J=1, .., N) is the Euclidean distance from vertex J to the opposite face of the simplex.
-vsig = ONE / sqrt(sum(simi**2, dim=2))
-veta = sqrt(sum(sim(:, 1:n)**2, dim=1))
+!vsig = ONE / sqrt(sum(simi**2, dim=2))
+!veta = sqrt(sum(sim(:, 1:n)**2, dim=1))
+vsig = ONE / sqrt(sum((simi * delta)**2, dim=2))
+veta = sqrt(sum((sim(:, 1:n) / delta)**2, dim=1))
 
 ! Decide which vertex to drop from the simplex. It will be replaced with a new point to improve the
 ! acceptability of the simplex. See equations (15) and (16) of the COBYLA paper.
-if (any(veta > factor_beta * delta)) then
+!if (any(veta > factor_beta * delta)) then
+if (any(veta > factor_beta)) then
     jdrop = int(maxloc(veta, mask=(.not. is_nan(veta)), dim=1), kind(jdrop))
     !!MATLAB: [~, jdrop] = max(veta, [], 'omitnan');
-elseif (any(vsig < factor_alpha * delta)) then
+!elseif (any(vsig < factor_alpha * delta)) then
+elseif (any(vsig < factor_alpha)) then
     jdrop = int(minloc(vsig, mask=(.not. is_nan(vsig)), dim=1), kind(jdrop))
     !!MATLAB: [~, jdrop] = min(vsig, [], 'omitnan');
 else
@@ -435,7 +442,8 @@ vsigj = ONE / sqrt(sum(simi(jdrop, :)**2))
 ! the COBYLA paper. This also explains why this subroutine does not replace DELTA with
 ! DELBAR = MAX(MIN(TENTH * SQRT(MAXVAL(DISTSQ)), HALF * DELTA), RHO) as in NEWUOA.
 !d = factor_gamma * delta * (vsigj * simi(jdrop, :))
-d = (vsigj * simi(jdrop, :)) * delta * factor_gamma
+!d = (vsigj * simi(jdrop, :)) * delta * factor_gamma
+d = factor_gamma * delta * (simi(jdrop, :) / norm(simi(jdrop, :)))
 
 ! The code below chooses the direction of D according to an approximation of the merit function.
 ! See (17) of the COBYLA paper and  line 225 of Powell's cobylb.f.

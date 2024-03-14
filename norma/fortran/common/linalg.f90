@@ -39,7 +39,7 @@ module linalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Thursday, August 10, 2023 AM12:38:23
+! Last Modified: Thursday, March 14, 2024 PM02:20:43
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -1879,6 +1879,7 @@ real(RP) :: y
 ! Local variables
 character(len=*), parameter :: srname = 'P_NORM'
 real(RP) :: p_loc
+real(RP) :: scaling
 
 ! Preconditions
 if (DEBUGGING) then
@@ -1908,6 +1909,7 @@ elseif (.not. any(abs(x) > 0)) then
     ! The following is incorrect without checking the last case, as X may be all NaN.
     y = ZERO
 else
+    scaling = maxval([abs(x), ZERO])
     if (is_posinf(p_loc)) then
         ! If SIZE(X) = 0, then MAXVAL(ABS(X)) = -HUGE(X); since we have handled such a case in the
         ! above, it is OK to write Y = MAXVAL(ABS(X)) below, but we append 0 for robustness.
@@ -1917,8 +1919,14 @@ else
         ! get full control on the computation, in a way similar to MATPROD and INPROD. A
         ! disadvantage is the possibility of over/underflow.
         y = sqrt(sum(x**2))
+        if ((is_finite(scaling) .and. .not. is_finite(y)) .or. (scaling > 0 .and. y <= 0)) then
+            y = scaling * sqrt(sum((x / scaling)**2))
+        end if
     else
         y = sum(abs(x)**p_loc)**(ONE / p_loc)
+        if ((is_finite(scaling) .and. .not. is_finite(y)) .or. (scaling > 0 .and. y <= 0)) then
+            y = scaling * sum(abs(x / scaling)**p_loc)**(ONE / p_loc)
+        end if
     end if
 end if
 
