@@ -30,11 +30,11 @@ end
 radix = 2;
 if strcmpi(precision, 'single')
     maxfloat = realmax('single') ;
-    %maxexponent = 128;
+    maxexponent = 128;
     minfloat = realmin('single');
 else  % Even if precision = 'quadruple'
     maxfloat = realmax('double') ;
-    %maxexponent = 1024;
+    maxexponent = 1024;
     minfloat = realmin('double');
 end
 
