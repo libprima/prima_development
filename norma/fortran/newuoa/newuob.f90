@@ -8,7 +8,7 @@ module newuob_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Saturday, March 09, 2024 PM09:23:47
+! Last Modified: Friday, March 15, 2024 PM04:07:46
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -56,8 +56,8 @@ use, non_intrinsic :: consts_mod, only : RP, IK, ONE, HALF, TENTH, REALMAX, DEBU
 use, non_intrinsic :: debug_mod, only : assert
 use, non_intrinsic :: evaluate_mod, only : evaluate
 use, non_intrinsic :: history_mod, only : savehist, rangehist
-use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf
-use, non_intrinsic :: infos_mod, only : INFO_DFT, MAXTR_REACHED, SMALL_TR_RADIUS
+use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf, is_finite
+use, non_intrinsic :: infos_mod, only : INFO_DFT, MAXTR_REACHED, SMALL_TR_RADIUS, NAN_INF_MODEL
 use, non_intrinsic :: linalg_mod, only : norm
 use, non_intrinsic :: message_mod, only : retmsg, rhomsg, fmsg
 use, non_intrinsic :: pintrf_mod, only : OBJ
@@ -181,25 +181,25 @@ f = fval(kopt)
 
 ! Check whether to return due to abnormal cases that may occur during the initialization.
 if (subinfo /= INFO_DFT) then
-    info = subinfo
-    ! Arrange FHIST and XHIST so that they are in the chronological order.
-    call rangehist(nf, xhist, fhist)
-    ! Print a return message according to IPRINT.
-    call retmsg(solver, info, iprint, nf, f, x)
-    ! Postconditions
-    if (DEBUGGING) then
-        call assert(nf <= maxfun, 'NF <= MAXFUN', srname)
-        call assert(size(x) == n .and. .not. any(is_nan(x)), 'SIZE(X) == N, X does not contain NaN', srname)
-        call assert(.not. (is_nan(f) .or. is_posinf(f)), 'F is not NaN/+Inf', srname)
-        call assert(size(xhist, 1) == n .and. size(xhist, 2) == maxxhist, 'SIZE(XHIST) == [N, MAXXHIST]', srname)
-        call assert(.not. any(is_nan(xhist(:, 1:min(nf, maxxhist)))), 'XHIST does not contain NaN', srname)
-        ! The last calculated X can be Inf (finite + finite can be Inf numerically).
-        call assert(size(fhist) == maxfhist, 'SIZE(FHIST) == MAXFHIST', srname)
-        call assert(.not. any(is_nan(fhist(1:min(nf, maxfhist))) .or. is_posinf(fhist(1:min(nf, maxfhist)))), &
-            & 'FHIST does not contain NaN/+Inf', srname)
-        call assert(.not. any(fhist(1:min(nf, maxfhist)) < f), 'F is the smallest in FHIST', srname)
-    end if
-    return
+    !info = subinfo
+    !! Arrange FHIST and XHIST so that they are in the chronological order.
+    !call rangehist(nf, xhist, fhist)
+    !! Print a return message according to IPRINT.
+    !call retmsg(solver, info, iprint, nf, f, x)
+    !! Postconditions
+    !if (DEBUGGING) then
+    !    call assert(nf <= maxfun, 'NF <= MAXFUN', srname)
+    !    call assert(size(x) == n .and. .not. any(is_nan(x)), 'SIZE(X) == N, X does not contain NaN', srname)
+    !    call assert(.not. (is_nan(f) .or. is_posinf(f)), 'F is not NaN/+Inf', srname)
+    !    call assert(size(xhist, 1) == n .and. size(xhist, 2) == maxxhist, 'SIZE(XHIST) == [N, MAXXHIST]', srname)
+    !    call assert(.not. any(is_nan(xhist(:, 1:min(nf, maxxhist)))), 'XHIST does not contain NaN', srname)
+    !    ! The last calculated X can be Inf (finite + finite can be Inf numerically).
+    !    call assert(size(fhist) == maxfhist, 'SIZE(FHIST) == MAXFHIST', srname)
+    !    call assert(.not. any(is_nan(fhist(1:min(nf, maxfhist))) .or. is_posinf(fhist(1:min(nf, maxfhist)))), &
+    !        & 'FHIST does not contain NaN/+Inf', srname)
+    !    call assert(.not. any(fhist(1:min(nf, maxfhist)) < f), 'F is the smallest in FHIST', srname)
+    !end if
+    !return
 end if
 
 ! Initialize [BMAT, ZMAT, IDZ], representing the inverse of the KKT matrix of the interpolation system.
@@ -208,6 +208,16 @@ call inith(ij, xpt, idz, bmat, zmat)
 ! Initialize the quadratic represented by [GOPT, HQ, PQ], so that its gradient at XBASE+XOPT is
 ! GOPT; its Hessian is HQ + sum_{K=1}^NPT PQ(K)*XPT(:, K)*XPT(:, K)'.
 call initq(ij, fval, xpt, gopt, hq, pq)
+if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+    subinfo = NAN_INF_MODEL
+end if
+if (subinfo /= INFO_DFT) then
+    info = subinfo
+    call rangehist(nf, xhist, fhist)
+! Print a return message according to IPRINT.
+    call retmsg(solver, info, iprint, nf, f, x)
+    return
+end if
 
 ! After initializing GOPT, HQ, PQ, BMAT, ZMAT, one can also choose to return if these arrays contain
 ! NaN. We do not do it here. The code will continue to run and possibly recovers by geometry steps.
@@ -349,6 +359,10 @@ do tr = 1, maxtr
             ! has been revised after the last function evaluation.
             ! 5. Powell's code tries Q_alt only when DELTA == RHO.
             call tryqalt(idz, bmat, fval - fval(kopt), ratio, xpt(:, kopt), xpt, zmat, itest, gopt, hq, pq)
+            if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+                info = NAN_INF_MODEL
+                exit
+            end if
         end if
     end if  ! End of IF (SHORTD .OR. TRFAIL). The normal trust-region calculation ends.
 
@@ -550,6 +564,10 @@ do tr = 1, maxtr
         call updateh(knew_geo, kopt, d, xpt, idz, bmat, zmat)
         call updatexf(knew_geo, ximproved, f, xosav + d, kopt, fval, xpt)
         call updateq(idz, knew_geo, ximproved, bmat, d, moderr, xdrop, xosav, xpt, zmat, gopt, hq, pq)
+        if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+            info = NAN_INF_MODEL
+            exit
+        end if
     end if  ! End of IF (IMPROVE_GEO). The procedure of improving geometry ends.
 
     ! The calculations with the current RHO are complete. Enhance the resolution of the algorithm
@@ -579,7 +597,7 @@ do tr = 1, maxtr
 end do  ! End of DO TR = 1, MAXTR. The iterative procedure ends.
 
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried yet.
-if (info == SMALL_TR_RADIUS .and. shortd .and. nf < maxfun) then
+if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
     x = xbase + (xpt(:, kopt) + d)
     call evaluate(calfun, x, f)
     nf = nf + 1_IK

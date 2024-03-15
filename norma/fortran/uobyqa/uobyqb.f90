@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, March 09, 2024 PM07:17:02
+! Last Modified: Friday, March 15, 2024 PM04:09:50
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -49,8 +49,8 @@ use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, HALF, TENTH, EPS, RE
 use, non_intrinsic :: debug_mod, only : assert
 use, non_intrinsic :: evaluate_mod, only : evaluate
 use, non_intrinsic :: history_mod, only : savehist, rangehist
-use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf
-use, non_intrinsic :: infos_mod, only : INFO_DFT, SMALL_TR_RADIUS, MAXTR_REACHED
+use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf, is_finite
+use, non_intrinsic :: infos_mod, only : INFO_DFT, SMALL_TR_RADIUS, MAXTR_REACHED, NAN_INF_MODEL
 use, non_intrinsic :: linalg_mod, only : vec2smat, smat_mul_vec, norm
 use, non_intrinsic :: message_mod, only : fmsg, rhomsg, retmsg
 use, non_intrinsic :: pintrf_mod, only : OBJ
@@ -170,12 +170,12 @@ f = fval(kopt)
 
 ! Check whether to return due to abnormal cases that may occur during the initialization.
 if (subinfo /= INFO_DFT) then
-    info = subinfo
+    !info = subinfo
     ! Arrange FHIST and XHIST so that they are in the chronological order.
-    call rangehist(nf, xhist, fhist)
+    !call rangehist(nf, xhist, fhist)
     ! Print a return message according to IPRINT.
-    call retmsg(solver, info, iprint, nf, f, x)
-    return
+    !call retmsg(solver, info, iprint, nf, f, x)
+!    return
 end if
 
 ! Initialize the Lagrange polynomials represented by PL.
@@ -183,6 +183,16 @@ call initl(xpt, pl)
 
 ! Initialize the quadratic model represented by PQ.
 call initq(fval, xpt, pq)
+if (.not. (all(is_finite(pq)))) then
+    subinfo = NAN_INF_MODEL
+end if
+if (subinfo /= INFO_DFT) then
+    info = subinfo
+    call rangehist(nf, xhist, fhist)
+    ! Print a return message according to IPRINT.
+    call retmsg(solver, info, iprint, nf, f, x)
+    return
+end if
 
 ! Set some more initial values.
 ! We must initialize RATIO. Otherwise, when SHORTD = TRUE, compilers may raise a run-time error that
@@ -292,6 +302,10 @@ do tr = 1, maxtr
             ddmove = sum((xpt(:, knew_tr) - xpt(:, kopt))**2)  ! KOPT is unupdated.
             ! Update PL, PQ, XPT, FVAL, and KOPT so that XPT(:, KNEW_TR) becomes XOPT + D.
             call update(knew_tr, d, f, moderr, kopt, fval, pl, pq, xpt)
+            if (.not. (all(is_finite(pq)))) then
+                info = NAN_INF_MODEL
+                exit
+            end if
         end if
     end if  ! End of IF (SHORTD .OR. TRFAIL). The normal trust-region calculation ends.
 
@@ -430,6 +444,10 @@ do tr = 1, maxtr
 
         ! Update PL, PQ, XPT, FVAL, and KOPT so that XPT(:, KNEW_GEO) becomes XOPT + D.
         call update(knew_geo, d, f, moderr, kopt, fval, pl, pq, xpt)
+        if (.not. (all(is_finite(pq)))) then
+            info = NAN_INF_MODEL
+            exit
+        end if
     end if  ! End of IF (IMPROVE_GEO). The procedure of improving geometry ends.
 
     ! The calculations with the current RHO are complete. Enhance the resolution of the algorithm
@@ -458,7 +476,7 @@ do tr = 1, maxtr
 end do  ! End of DO TR = 1, MAXTR. The iterative procedure ends.
 
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried yet.
-if (info == SMALL_TR_RADIUS .and. shortd .and. nf < maxfun) then
+if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
     x = xbase + (xpt(:, kopt) + d)
     call evaluate(calfun, x, f)
     nf = nf + 1_IK

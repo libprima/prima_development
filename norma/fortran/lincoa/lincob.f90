@@ -15,7 +15,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, March 09, 2024 PM09:23:11
+! Last Modified: Friday, March 15, 2024 PM03:57:16
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -77,8 +77,8 @@ use, non_intrinsic :: consts_mod, only : RP, IK, ZERO, ONE, HALF, TENTH, REALMAX
 use, non_intrinsic :: debug_mod, only : assert
 use, non_intrinsic :: evaluate_mod, only : evaluate
 use, non_intrinsic :: history_mod, only : savehist, rangehist
-use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf
-use, non_intrinsic :: infos_mod, only : INFO_DFT, MAXTR_REACHED, SMALL_TR_RADIUS
+use, non_intrinsic :: infnan_mod, only : is_nan, is_posinf, is_finite
+use, non_intrinsic :: infos_mod, only : INFO_DFT, MAXTR_REACHED, SMALL_TR_RADIUS, NAN_INF_MODEL
 use, non_intrinsic :: linalg_mod, only : matprod, maximum, eye, trueloc, linspace, norm, trueloc
 use, non_intrinsic :: memory_mod, only : safealloc
 use, non_intrinsic :: message_mod, only : fmsg, rhomsg, retmsg
@@ -278,6 +278,35 @@ end do
 ! Check whether to return due to abnormal cases that may occur during the initialization.
 if (subinfo /= INFO_DFT) then
     info = subinfo
+    !! Return the best calculated values of the variables. If CTOL > 0, the KOPT decided by SELECTX
+    !! may not be the same as the one by INITXF.
+    !kopt = selectx(ffilt(1:nfilt), cfilt(1:nfilt), cweight, ctol)
+    !x = xfilt(:, kopt)
+    !f = ffilt(kopt)
+    !constr_leq = matprod(Aeq, x) - beq
+    !constr = [xl(ixl) - x(ixl), x(ixu) - xu(ixu), -constr_leq, constr_leq, matprod(Aineq, x) - bineq]
+    !cstrv = maximum([ZERO, constr])
+    !call retmsg(solver, info, iprint, nf, f, x, cstrv, constr)
+    !! Arrange CHIST, FHIST, and XHIST so that they are in the chronological order.
+    !call rangehist(nf, xhist, fhist, chist)
+    !return
+end if
+
+! Initialize [BMAT, ZMAT, IDZ], representing the inverse of the KKT matrix of the interpolation system.
+call inith(ij, xpt, idz, bmat, zmat)
+
+! Initialize the quadratic represented by [GOPT, HQ, PQ], so that its gradient at XBASE+XOPT is
+! GOPT; its Hessian is HQ + sum_{K=1}^NPT PQ(K)*XPT(:, K)*XPT(:, K)'.
+hq = ZERO
+pq = omega_mul(idz, zmat, fval)
+gopt = matprod(bmat(:, 1:npt), fval) + hess_mul(xpt(:, kopt), xpt, pq)
+pqalt = pq
+galt = gopt
+if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+    subinfo = NAN_INF_MODEL
+end if
+if (subinfo /= INFO_DFT) then
+    info = subinfo
     ! Return the best calculated values of the variables. If CTOL > 0, the KOPT decided by SELECTX
     ! may not be the same as the one by INITXF.
     kopt = selectx(ffilt(1:nfilt), cfilt(1:nfilt), cweight, ctol)
@@ -291,17 +320,6 @@ if (subinfo /= INFO_DFT) then
     call rangehist(nf, xhist, fhist, chist)
     return
 end if
-
-! Initialize [BMAT, ZMAT, IDZ], representing the inverse of the KKT matrix of the interpolation system.
-call inith(ij, xpt, idz, bmat, zmat)
-
-! Initialize the quadratic represented by [GOPT, HQ, PQ], so that its gradient at XBASE+XOPT is
-! GOPT; its Hessian is HQ + sum_{K=1}^NPT PQ(K)*XPT(:, K)*XPT(:, K)'.
-hq = ZERO
-pq = omega_mul(idz, zmat, fval)
-gopt = matprod(bmat(:, 1:npt), fval) + hess_mul(xpt(:, kopt), xpt, pq)
-pqalt = pq
-galt = gopt
 
 ! Initialize RESCON.
 rescon = max(b - matprod(xpt(:, kopt), amat), ZERO)
@@ -464,6 +482,10 @@ do tr = 1, maxtr
             ! the current model with the alternative model if the recent few (three) alternative
             ! models are more accurate in predicting the function value of XOPT + D.
             call tryqalt(idz, bmat, fval - fval(kopt), xpt(:, kopt), xpt, zmat, qalt_better, gopt, pq, hq, galt, pqalt)
+            if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+                info = NAN_INF_MODEL
+                exit
+            end if
 
             ! Update RESCON if XOPT is changed.
             ! Zaikun 20221115: Shouldn't we do it after DELTA is updated?
@@ -606,6 +628,10 @@ do tr = 1, maxtr
         ! more accurate in predicting the function value of XOPT + D.
         ! N.B.: Powell's code does this only if XOPT + D is feasible.
         call tryqalt(idz, bmat, fval - fval(kopt), xpt(:, kopt), xpt, zmat, qalt_better, gopt, pq, hq, galt, pqalt)
+        if (.not. (all(is_finite(gopt) .and. all(is_finite(pq)) .and. all(is_finite(hq))))) then
+            info = NAN_INF_MODEL
+            exit
+        end if
 
         ! Update RESCON. Zaikun 20221115: Currently, UPDATERES does not update RESCON if XIMPROVED
         ! is FALSE. Shouldn't we do it whenever DELTA is updated? Have we MISUNDERSTOOD RESCON?
@@ -642,7 +668,7 @@ do tr = 1, maxtr
 end do  ! End of DO TR = 1, MAXTR. The iterative procedure ends.
 
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried yet.
-if (info == SMALL_TR_RADIUS .and. shortd .and. nf < maxfun) then
+if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
     x = xbase + (xpt(:, kopt) + d)
     call evaluate(calfun, x, f)
     nf = nf + 1_IK
