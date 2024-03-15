@@ -39,7 +39,7 @@ module linalg_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Thursday, March 14, 2024 PM02:20:43
+! Last Modified: Saturday, March 16, 2024 AM05:18:01
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -1411,14 +1411,14 @@ elseif (any(is_inf(v))) then
     u(trueloc(is_inf(v))) = sign(ONE, v(trueloc(is_inf(v))))
     !!MATLAB: u = 0; u(isinf(v)) = sign(v(isinf(v)))
     u = u / norm(u)
-    !y = inprod(x, u) * u
+    y = inprod(x, u) * u
     scaling = maxval(abs(x)) ! The scaling seems to reduce the rounding error.
-    y = scaling * inprod(x / scaling, u) * u
+    !y = scaling * inprod(x / scaling, u) * u
 else
     u = v / norm(v)
-    !y = inprod(x, u) * u
+    y = inprod(x, u) * u
     scaling = maxval(abs(x)) ! The scaling seems to reduce the rounding error.
-    y = scaling * inprod(x / scaling, u) * u
+    !y = scaling * inprod(x / scaling, u) * u
 end if
 
 !====================!
