@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, March 15, 2024 PM04:09:50
+! Last Modified: Saturday, March 16, 2024 PM02:29:09
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -170,12 +170,12 @@ f = fval(kopt)
 
 ! Check whether to return due to abnormal cases that may occur during the initialization.
 if (subinfo /= INFO_DFT) then
-    !info = subinfo
+    info = subinfo
     ! Arrange FHIST and XHIST so that they are in the chronological order.
-    !call rangehist(nf, xhist, fhist)
+    call rangehist(nf, xhist, fhist)
     ! Print a return message according to IPRINT.
-    !call retmsg(solver, info, iprint, nf, f, x)
-!    return
+    call retmsg(solver, info, iprint, nf, f, x)
+    return
 end if
 
 ! Initialize the Lagrange polynomials represented by PL.

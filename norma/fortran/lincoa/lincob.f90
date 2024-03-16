@@ -15,7 +15,7 @@ module lincob_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, March 15, 2024 PM03:57:16
+! Last Modified: Saturday, March 16, 2024 PM02:25:16
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -278,18 +278,18 @@ end do
 ! Check whether to return due to abnormal cases that may occur during the initialization.
 if (subinfo /= INFO_DFT) then
     info = subinfo
-    !! Return the best calculated values of the variables. If CTOL > 0, the KOPT decided by SELECTX
-    !! may not be the same as the one by INITXF.
-    !kopt = selectx(ffilt(1:nfilt), cfilt(1:nfilt), cweight, ctol)
-    !x = xfilt(:, kopt)
-    !f = ffilt(kopt)
-    !constr_leq = matprod(Aeq, x) - beq
-    !constr = [xl(ixl) - x(ixl), x(ixu) - xu(ixu), -constr_leq, constr_leq, matprod(Aineq, x) - bineq]
-    !cstrv = maximum([ZERO, constr])
-    !call retmsg(solver, info, iprint, nf, f, x, cstrv, constr)
-    !! Arrange CHIST, FHIST, and XHIST so that they are in the chronological order.
-    !call rangehist(nf, xhist, fhist, chist)
-    !return
+    ! Return the best calculated values of the variables. If CTOL > 0, the KOPT decided by SELECTX
+    ! may not be the same as the one by INITXF.
+    kopt = selectx(ffilt(1:nfilt), cfilt(1:nfilt), cweight, ctol)
+    x = xfilt(:, kopt)
+    f = ffilt(kopt)
+    constr_leq = matprod(Aeq, x) - beq
+    constr = [xl(ixl) - x(ixl), x(ixu) - xu(ixu), -constr_leq, constr_leq, matprod(Aineq, x) - bineq]
+    cstrv = maximum([ZERO, constr])
+    call retmsg(solver, info, iprint, nf, f, x, cstrv, constr)
+    ! Arrange CHIST, FHIST, and XHIST so that they are in the chronological order.
+    call rangehist(nf, xhist, fhist, chist)
+    return
 end if
 
 ! Initialize [BMAT, ZMAT, IDZ], representing the inverse of the KKT matrix of the interpolation system.
