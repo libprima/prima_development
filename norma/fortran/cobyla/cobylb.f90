@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Tuesday, March 19, 2024 PM06:49:01
+! Last Modified: Saturday, March 23, 2024 PM06:17:33
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -344,9 +344,9 @@ do tr = 1, maxtr
     ! TENTH seems to work better than HALF or QUART, especially for linearly constrained problems.
     ! Note that LINCOA has a slightly more sophisticated way of defining SHORTD, taking into account
     ! whether D causes a change to the active set. Should we try the same here?
-    !shortd = (dnorm < TENTH * rho)
+    shortd = (dnorm <= TENTH * rho)
     x = sim(:, n + 1) + d
-    shortd = (norm(x - sim(:, n + 1)) <= TENTH * rho)  ! <= is better than < in case of underflow
+    !shortd = (norm(x - sim(:, n + 1)) <= TENTH * rho)  ! <= is better than < in case of underflow
 
     ! Predict the change to F (PREREF) and to the constraint violation (PREREC) due to D.
     ! We have the following in precise arithmetic. They may fail to hold due to rounding errors.
