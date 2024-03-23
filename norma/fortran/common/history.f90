@@ -7,7 +7,7 @@ module history_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Wednesday, August 02, 2023 AM11:22:57
+! Last Modified: Sunday, March 24, 2024 AM02:30:16
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -53,7 +53,7 @@ real(RP), intent(out), optional, allocatable :: conhist(:, :)
 ! Local variables
 character(len=*), parameter :: srname = 'PREHIST'
 integer(IK) :: maxhist_in
-integer(IK) :: unit_memo
+integer :: unit_memo
 
 ! Preconditions
 if (DEBUGGING) then
