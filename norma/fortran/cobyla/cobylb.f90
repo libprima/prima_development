@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Saturday, March 23, 2024 PM06:17:33
+! Last Modified: Saturday, March 23, 2024 PM09:55:03
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -326,7 +326,8 @@ do tr = 1, maxtr
     end if
 
     ! Does the interpolation set have acceptable geometry? It affects IMPROVE_GEO and REDUCE_RHO.
-    adequate_geo = assess_geo(delta, factor_alpha, factor_beta, sim, simi)
+    !adequate_geo = assess_geo(delta, factor_alpha, factor_beta, sim, simi)
+    adequate_geo = all(sum(sim(:, 1:n)**2, dim=1) <= 4.0_RP * delta**2)
 
     ! Calculate the linear approximations to the objective and constraint functions.
     ! N.B.: TRSTLP accesses A mostly by columns, so it is more reasonable to save A instead of A^T.
@@ -521,14 +522,17 @@ do tr = 1, maxtr
     ! we take another geometry step in that case? If no, why should we do it here? Indeed, this
     ! distinction makes no practical difference for CUTEst problems with at most 100 variables
     ! and 5000 constraints, while the algorithm framework is simplified.
-    if (improve_geo .and. .not. assess_geo(delta, factor_alpha, factor_beta, sim, simi)) then
+    !if (improve_geo .and. .not. assess_geo(delta, factor_alpha, factor_beta, sim, simi)) then
+    adequate_geo = all(sum(sim(:, 1:n)**2, dim=1) <= 4.0_RP * delta**2)
+    if (improve_geo .and. .not. adequate_geo) then
         ! Before the geometry step, UPDATEPOLE has been called either implicitly by UPDATEXFC or
         ! explicitly after CPEN is updated, so that SIM(:, N + 1) is the optimal vertex.
 
         ! Decide a vertex to drop from the simplex. It will be replaced with SIM(:, N + 1) + D to
         ! improve acceptability of the simplex. See equations (15) and (16) of the COBYLA paper.
         ! N.B.: COBYLA never sets JDROP_GEO = N + 1.
-        jdrop_geo = setdrop_geo(delta, factor_alpha, factor_beta, sim, simi)
+        !jdrop_geo = setdrop_geo(delta, factor_alpha, factor_beta, sim, simi)
+        jdrop_geo = maxloc(sum(sim(:, 1:n)**2, dim=1), dim=1)
 
         ! The following JDROP_GEO comes from UOBYQA/NEWUOA/BOBYQA/LINCOA. It performs poorly!
         !!jdrop_geo = maxloc(sum(sim(:, 1:n)**2, dim=1), dim=1)

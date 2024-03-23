@@ -32,7 +32,7 @@ module bobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, March 16, 2024 PM02:24:35
+! Last Modified: Saturday, March 23, 2024 PM10:02:51
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -305,7 +305,7 @@ do tr = 1, maxtr
     !call trsbox(delta, gopt, hq, pq, sl, su, xpt(:, kopt), xpt, crvmin, d)
     call trsbox(delta, gopt, hq, pq, sl, su, trtol, xpt(:, kopt), xpt, crvmin, d)
     dnorm = min(delta, norm(d))
-    shortd = (dnorm < HALF * rho)
+    shortd = (dnorm <= HALF * rho)
 
     ! Set QRED to the reduction of the quadratic model when the move D is made from XOPT. QRED
     ! should be positive If it is nonpositive due to rounding errors, we will not take this step.
