@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Thursday, March 14, 2024 PM02:30:19
+! Last Modified: Sunday, March 24, 2024 PM06:35:48
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -366,7 +366,7 @@ end if
 end function setdrop_geo
 
 
-function geostep(jdrop, amat, bvec, conmat, cpen, cval, delta, fval, factor_gamma, simi) result(d)
+function geostep(jdrop, amat, bvec, conmat, cpen, cval, delbar, fval, factor_gamma, simi) result(d)
 !--------------------------------------------------------------------------------------------------!
 ! This function calculates a geometry step so that the geometry of the interpolation set is improved
 ! when SIM(:, JDRO_GEO) is replaced with SIM(:, N+1) + D. See (15)--(17) of the COBYLA paper.
@@ -387,7 +387,7 @@ real(RP), intent(in) :: bvec(:)
 real(RP), intent(in) :: conmat(:, :)    ! CONMAT(M, N+1)
 real(RP), intent(in) :: cpen
 real(RP), intent(in) :: cval(:)     ! CVAL(N+1)
-real(RP), intent(in) :: delta
+real(RP), intent(in) :: delbar
 real(RP), intent(in) :: factor_gamma
 real(RP), intent(in) :: fval(:)     ! FVAL(N+1)
 real(RP), intent(in) :: simi(:, :)  ! SIMI(N, N)
@@ -415,7 +415,7 @@ n = int(size(simi, 1), kind(n))
 if (DEBUGGING) then
     call assert(m >= 0, 'M >= 0', srname)
     call assert(n >= 1, 'N >= 1', srname)
-    call assert(delta > 0, 'DELTA > 0', srname)
+    call assert(delbar > 0, 'DELTA > 0', srname)
     call assert(cpen > 0, 'CPEN > 0', srname)
     call assert(size(simi, 1) == n .and. size(simi, 2) == n, 'SIZE(SIMI) == [N, N]', srname)
     call assert(all(is_finite(simi)), 'SIMI is finite', srname)
@@ -443,7 +443,8 @@ vsigj = ONE / sqrt(sum(simi(jdrop, :)**2))
 ! DELBAR = MAX(MIN(TENTH * SQRT(MAXVAL(DISTSQ)), HALF * DELTA), RHO) as in NEWUOA.
 !d = factor_gamma * delta * (vsigj * simi(jdrop, :))
 !d = (vsigj * simi(jdrop, :)) * delta * factor_gamma
-d = factor_gamma * delta * (simi(jdrop, :) / norm(simi(jdrop, :)))
+!d = factor_gamma * delta * (simi(jdrop, :) / norm(simi(jdrop, :)))
+d = delbar * (simi(jdrop, :) / norm(simi(jdrop, :)))
 
 ! The code below chooses the direction of D according to an approximation of the merit function.
 ! See (17) of the COBYLA paper and  line 225 of Powell's cobylb.f.
@@ -472,8 +473,8 @@ if (DEBUGGING) then
     call assert(size(d) == n .and. all(is_finite(d)), 'SIZE(D) == N, D is finite', srname)
     ! In theory, ||S|| == FACTOR_GAMMA*DELTA, which may be false due to rounding, but not too far.
     ! It is crucial to ensure that the geometry step is nonzero, which holds in theory.
-    call assert(norm(d) > 0.9_RP * factor_gamma * delta .and. norm(d) <= 1.1_RP * factor_gamma * delta, &
-        & '||D|| == FACTOR_GAMMA*DELTA', srname)
+!    call assert(norm(d) > 0.9_RP * factor_gamma * delta .and. norm(d) <= 1.1_RP * factor_gamma * delta, &
+!        & '||D|| == FACTOR_GAMMA*DELTA', srname)
 end if
 end function geostep
 

@@ -16,7 +16,7 @@ module cobylb_mod
 !
 ! Started: July 2021
 !
-! Last Modified: Saturday, March 23, 2024 PM09:55:03
+! Last Modified: Sunday, March 24, 2024 PM06:31:49
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -130,6 +130,7 @@ real(RP) :: cpen  ! Penalty parameter for constraint in merit function (PARMU in
 real(RP) :: cval(size(x) + 1)
 real(RP) :: d(size(x))
 real(RP) :: delta
+real(RP) :: delbar
 real(RP) :: dnorm
 real(RP) :: ffilt(size(cfilt))
 real(RP) :: fval(size(x) + 1)
@@ -551,7 +552,8 @@ do tr = 1, maxtr
         ! rather than DELTA. This should not be done here, because D should improve the geometry of
         ! the simplex when SIM(:, JDROP) is replaced with D; the quality of the geometry is defined
         ! by DELTA instead of DELBAR as in (14) of the COBYLA paper. See GEOSTEP for more detail.
-        d = geostep(jdrop_geo, amat, bvec, conmat, cpen, cval, delta, fval, factor_gamma, simi)
+        delbar = HALF * delta
+        d = geostep(jdrop_geo, amat, bvec, conmat, cpen, cval, delbar, fval, factor_gamma, simi)
 
         x = sim(:, n + 1) + d
 
