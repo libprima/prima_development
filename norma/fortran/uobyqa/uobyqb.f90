@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Saturday, March 23, 2024 PM10:02:19
+! Last Modified: Sunday, March 31, 2024 PM08:08:38
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -235,6 +235,10 @@ info = MAXTR_REACHED
 ! REDUCE_RHO: Should we reduce rho?
 ! UOBYQA never sets IMPROVE_GEO and REDUCE_RHO to TRUE simultaneously.
 do tr = 1, maxtr
+    distsq = sum((xpt - spread(xpt(:, kopt), dim=2, ncopies=npt))**2, dim=1)
+    !!MATLAB: distsq = sum((xpt - xpt(:, kopt)).^2)  % Implicit expansion
+    close_itpset = all(distsq <= 4.0_RP * delta**2)  ! Powell's NEWUOA code.
+
     ! Generate trust region step D, and also calculate a lower bound on the Hessian of Q.
     g = pq(1:n) + smat_mul_vec(pq(n + 1:npt - 1), xpt(:, kopt))
     h = vec2smat(pq(n + 1:npt - 1))
@@ -325,7 +329,7 @@ do tr = 1, maxtr
     ! CLOSE_ITPSET: Are the interpolation points close to XOPT?
     distsq = sum((xpt - spread(xpt(:, kopt), dim=2, ncopies=npt))**2, dim=1)
     !!MATLAB: distsq = sum((xpt - xpt(:, kopt)).^2)  % Implicit expansion
-    close_itpset = all(distsq <= 4.0_RP * delta**2)  ! Powell's NEWUOA code.
+    !close_itpset = all(distsq <= 4.0_RP * delta**2)  ! Powell's NEWUOA code.
     ! Below are some alternative definitions of CLOSE_ITPSET.
     ! N.B.: The threshold for CLOSE_ITPSET is at least DELBAR, the trust region radius for GEOSTEP.
     ! !close_itpset = all(distsq <= 4.0_RP * rho**2)  ! Powell's code.
