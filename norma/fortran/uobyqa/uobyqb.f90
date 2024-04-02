@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, March 31, 2024 PM08:08:38
+! Last Modified: Wednesday, April 03, 2024 AM12:03:29
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -115,7 +115,7 @@ logical :: trfail
 logical :: ximproved
 real(RP) :: crvmin
 real(RP) :: d(size(x))
-real(RP) :: ddmove
+real(RP) :: ddmove, xdrop(size(x))
 real(RP) :: delbar
 real(RP) :: delta
 real(RP) :: distsq((size(x) + 1) * (size(x) + 2) / 2)
@@ -304,12 +304,14 @@ do tr = 1, maxtr
         ddmove = ZERO
         if (knew_tr > 0) then
             ddmove = sum((xpt(:, knew_tr) - xpt(:, kopt))**2)  ! KOPT is unupdated.
+            xdrop = xpt(:, knew_tr)
             ! Update PL, PQ, XPT, FVAL, and KOPT so that XPT(:, KNEW_TR) becomes XOPT + D.
             call update(knew_tr, d, f, moderr, kopt, fval, pl, pq, xpt)
             if (.not. (all(is_finite(pq)))) then
                 info = NAN_INF_MODEL
                 exit
             end if
+            ddmove = sum((xdrop - xpt(:, kopt))**2)  ! KOPT is unupdated.
         end if
     end if  ! End of IF (SHORTD .OR. TRFAIL). The normal trust-region calculation ends.
 
