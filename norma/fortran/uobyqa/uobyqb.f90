@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, April 04, 2024 AM11:00:08
+! Last Modified: Thursday, April 04, 2024 AM11:26:39
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -504,7 +504,7 @@ end do  ! End of DO TR = 1, MAXTR. The iterative procedure ends.
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried yet.
 f = fval(kopt) + 1
 !if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
-if (info == SMALL_TR_RADIUS .and. shortd .and. norm(x - (xbase + xpt(:, kopt))) >= TENTH * rhoend .and. nf < maxfun) then
+if (info == SMALL_TR_RADIUS .and. shortd .and. norm(x - (xbase + xpt(:, kopt))) > TENTH * rhoend .and. nf < maxfun) then
     x = xbase + (xpt(:, kopt) + d)
     call evaluate(calfun, x, f)
     nf = nf + 1_IK
