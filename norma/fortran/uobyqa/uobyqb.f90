@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Wednesday, April 03, 2024 AM12:03:29
+! Last Modified: Thursday, April 04, 2024 AM01:49:20
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -92,6 +92,7 @@ real(RP), intent(out) :: xhist(:, :)  ! XHIST(N, MAXXHIST)
 ! Local variables
 character(len=*), parameter :: solver = 'UOBYQA'
 character(len=*), parameter :: srname = 'UOBYQB'
+integer(IK) :: k
 integer(IK) :: knew_geo
 integer(IK) :: knew_tr
 integer(IK) :: kopt
@@ -244,6 +245,7 @@ do tr = 1, maxtr
     h = vec2smat(pq(n + 1:npt - 1))
     call trstep(delta, g, h, trtol, d, crvmin)
 
+    x = xbase + (xpt(:, kopt) + d)
     ! Check whether D is too short to invoke a function evaluation.
     dnorm = min(delta, norm(d))
     shortd = (dnorm <= HALF * rho)
@@ -261,21 +263,23 @@ do tr = 1, maxtr
         end if
     else
         ! Calculate the next value of the objective function.
-        x = xbase + (xpt(:, kopt) + d)
-        call evaluate(calfun, x, f)
-        nf = nf + 1_IK
+        !call evaluate(calfun, x, f)
+        !nf = nf + 1_IK
+        do k = 1, npt
+            distsq(k) = sum((x - (xbase + xpt(:, k)))**2)
+        end do
+        if (any(distsq <= (1.0E-4 * rhoend)**2)) then
+            f = fval(minloc(distsq, dim=1))
+        else
+            call evaluate(calfun, x, f)
+            nf = nf + 1
+            ! Save X, F into the history.
+            call savehist(nf, x, xhist, f, fhist)
+        end if
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, 'Trust region', iprint, nf, delta, f, x)
-        ! Save X, F into the history.
-        call savehist(nf, x, xhist, f, fhist)
 
-        ! Check whether to exit
-        subinfo = checkexit(maxfun, nf, f, ftarget, x)
-        if (subinfo /= INFO_DFT) then
-            info = subinfo
-            exit
-        end if
 
         ! Update DNORM_REC and MODERR_REC.
         ! DNORM_REC records the DNORM of the latest 3 function evaluations with the current RHO.
@@ -312,6 +316,12 @@ do tr = 1, maxtr
                 exit
             end if
             ddmove = sum((xdrop - xpt(:, kopt))**2)  ! KOPT is unupdated.
+        end if
+        ! Check whether to exit
+        subinfo = checkexit(maxfun, nf, f, ftarget, x)
+        if (subinfo /= INFO_DFT) then
+            info = subinfo
+            exit
         end if
     end if  ! End of IF (SHORTD .OR. TRFAIL). The normal trust-region calculation ends.
 
@@ -424,20 +434,23 @@ do tr = 1, maxtr
 
         ! Calculate the next value of the objective function.
         x = xbase + (xpt(:, kopt) + d)
-        call evaluate(calfun, x, f)
-        nf = nf + 1_IK
+        !call evaluate(calfun, x, f)
+        !nf = nf + 1_IK
+        do k = 1, npt
+            distsq(k) = sum((x - (xbase + xpt(:, k)))**2)
+        end do
+        if (any(distsq <= (1.0E-4 * rhoend)**2)) then
+            f = fval(minloc(distsq, dim=1))
+        else
+            call evaluate(calfun, x, f)
+            nf = nf + 1
+            ! Save X, F into the history.
+            call savehist(nf, x, xhist, f, fhist)
+        end if
 
         ! Print a message about the function evaluation according to IPRINT.
         call fmsg(solver, 'Geometry', iprint, nf, delbar, f, x)
         ! Save X, F into the history.
-        call savehist(nf, x, xhist, f, fhist)
-
-        ! Check whether to exit
-        subinfo = checkexit(maxfun, nf, f, ftarget, x)
-        if (subinfo /= INFO_DFT) then
-            info = subinfo
-            exit
-        end if
 
         ! Update DNORM_REC and MODERR_REC.
         ! DNORM_REC records the DNORM of the latest 3 function evaluations with the current RHO.
@@ -454,6 +467,13 @@ do tr = 1, maxtr
             info = NAN_INF_MODEL
             exit
         end if
+        ! Check whether to exit
+        subinfo = checkexit(maxfun, nf, f, ftarget, x)
+        if (subinfo /= INFO_DFT) then
+            info = subinfo
+            exit
+        end if
+
     end if  ! End of IF (IMPROVE_GEO). The procedure of improving geometry ends.
 
     ! The calculations with the current RHO are complete. Enhance the resolution of the algorithm
@@ -482,7 +502,9 @@ do tr = 1, maxtr
 end do  ! End of DO TR = 1, MAXTR. The iterative procedure ends.
 
 ! Return from the calculation, after trying the Newton-Raphson step if it has not been tried yet.
-if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
+f = fval(kopt) + 1
+!if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf < maxfun) then
+if (info == SMALL_TR_RADIUS .and. shortd .and. norm(x - (xbase + xpt(:, kopt))) >= TENTH * rhoend .and. nf < maxfun) then
     x = xbase + (xpt(:, kopt) + d)
     call evaluate(calfun, x, f)
     nf = nf + 1_IK
@@ -494,7 +516,7 @@ if (info == SMALL_TR_RADIUS .and. shortd .and. dnorm >= TENTH * rhoend .and. nf 
 end if
 
 ! Choose the [X, F] to return: either the current [X, F] or [XBASE + XOPT, FOPT].
-if (fval(kopt) < f .or. is_nan(f)) then
+if (fval(kopt) <= f .or. is_nan(f)) then
     x = xbase + xpt(:, kopt)
     f = fval(kopt)
 end if
