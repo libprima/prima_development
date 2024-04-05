@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, April 04, 2024 PM10:26:48
+! Last Modified: Friday, April 05, 2024 AM09:50:36
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -268,7 +268,7 @@ do tr = 1, maxtr
         do k = 1, npt
             distsq(k) = sum((x - (xbase + xpt(:, k)))**2)
         end do
-        if (any(distsq <= (1.0E-3 * rhoend)**2)) then
+        if (any(distsq <= (1.0E-4 * rhoend)**2)) then
             f = fval(minloc(distsq, dim=1))
         else
             call evaluate(calfun, x, f)
@@ -439,7 +439,7 @@ do tr = 1, maxtr
         do k = 1, npt
             distsq(k) = sum((x - (xbase + xpt(:, k)))**2)
         end do
-        if (any(distsq <= (1.0E-3 * rhoend)**2)) then
+        if (any(distsq <= (1.0E-4 * rhoend)**2)) then
             f = fval(minloc(distsq, dim=1))
         else
             call evaluate(calfun, x, f)
