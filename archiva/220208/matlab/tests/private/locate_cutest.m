@@ -8,7 +8,7 @@ if nargin < 1
     directory = getenv('HOME');
 end
 
-[~, cmtools] = system(['find ', directory, ' -maxdepth 6 -wholename "*/matcutest/mtools/src" -type d -print -quit']);
+[~, cmtools] = system(['find ', directory, ' -maxdepth 13 -wholename "*/matcutest/mtools/src" -type d -print -quit']);
 
 if isempty(cmtools)
     error('locate_matcutest:MatCUTEstNotFound', 'MatCUTEst is not found under %s.', directory);

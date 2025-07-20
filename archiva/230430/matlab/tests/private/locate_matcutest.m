@@ -23,7 +23,7 @@ end
 if isempty(cmtools)
     % In the following line, the "*/" before signature_path cannot be removed.
     name_str = ['"*/', signature_path, '"'];
-    [~, cmtools] = system(['find ', directory, ' -maxdepth 6 -wholename ', name_str, ' -type d -print -quit']);
+    [~, cmtools] = system(['find ', directory, ' -maxdepth 13 -wholename ', name_str, ' -type d -print -quit']);
 
     if isempty(cmtools)
         error('locate_matcutest:MatCUTEstNotFound', 'MatCUTEst is not found under %s.', directory);
