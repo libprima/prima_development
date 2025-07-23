@@ -71,7 +71,7 @@ end
 compiler_configurations = mex.getCompilerConfigurations('fortran', 'selected');
 extra_compiler_options = '-g';
 if contains(compiler_configurations.Manufacturer, 'gnu', 'IgnoreCase', true)  % gfortran
-    extra_compiler_options = [extra_compiler_options, ' -fno-stack-arrays'];
+    extra_compiler_options = [extra_compiler_options, ' -Wno-missing-include-dirs  -fno-stack-arrays'];
 elseif contains(compiler_configurations.Manufacturer, 'intel', 'IgnoreCase', true)  % Intel compiler
     if ispc
         extra_compiler_options = [extra_compiler_options, ' /heap-arrays'];

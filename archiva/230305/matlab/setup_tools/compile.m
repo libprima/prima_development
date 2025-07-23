@@ -58,6 +58,47 @@ else
     verbose_option = '-silent';
 end
 
+
+compiler_configurations = mex.getCompilerConfigurations('fortran', 'selected');
+extra_compiler_options = '';
+compiler_manufacturer = lower(compiler_configurations.Manufacturer);
+if contains(compiler_manufacturer, 'gnu')  % gfortran
+    % -Wno-missing-include-dirs is needed to suppress the warning about missing include directories
+    % when Simulink is not installed.
+    extra_compiler_options = '-g -Wno-missing-include-dirs -fno-stack-arrays -frecursive';
+elseif contains(compiler_manufacturer, 'intel')  % Intel compiler
+    if ispc
+        extra_compiler_options = '/Z7 /heap-arrays /assume:recursion';
+    else
+        extra_compiler_options = '-g -heap-arrays -assume recursion';
+    end
+elseif contains(compiler_manufacturer, 'nag')  % NAG compiler
+    extra_compiler_options = '-g';
+else
+    warning('prima:UnrecognizedCompiler', 'Unrecognized compiler %s. The package may not work.', ...
+        compiler_configurations.Name);
+end
+if ispc  % Windows
+    compiler_options = ['COMPFLAGS="$COMPFLAGS ', extra_compiler_options, '"'];
+else
+    compiler_options = ['FFLAGS="$FFLAGS ', extra_compiler_options, '"'];
+end
+
+% Zaikun 20240216: The following is a workaround for https://github.com/libprima/prima/issues/161,
+% where MEX fails due to incompatibility between the new linker of Xcode 15 on macOS and Intel oneAPI 2023.
+% The fix is to replace the linker option "-undefined error" with "-undefined dynamic_lookup".
+% See also https://github.com/libprima/prima/issues/158.
+% Note that we have to modify `LDFLAGSVER`. Setting `LDFLAGS` or `LINKFLAGS` does not work, although
+% the latter is suggested at https://www.mathworks.com/help/matlab/ref/mex.html.
+linker_options = '';
+if ismac && contains(compiler_manufacturer, 'intel')  % macOS with Intel compiler
+    linker_options = 'LDFLAGSVER="$LDFLAGSVER -undefined dynamic_lookup"';
+end
+
+% MEX options shared by all compiling processes below.
+common_mex_options = {verbose_option, compiler_options, linker_options};
+
+
 % Name of the file that contains the list of Fortran files. There should be such a file in each
 % Fortran source code directory, and the list should indicate the dependence among the files.
 filelist = 'ffiles.txt';
@@ -75,8 +116,9 @@ copyfile(header_file, header_file_bak);
 common_files = [list_files(common, filelist), fullfile(gateways, 'fmxapi.F'), fullfile(gateways, 'cbfun.F')];
 
 fprintf('Compiling the common files ... ');
+
 for idbg = 1 : length(debug_flags)
-    mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+    mex_options = [common_mex_options, {['-', dbgstr(debug_flags{idbg})]}];
     for iprc = 1 : length(precisions)
         prepare_header(header_file, precisions{iprc}, debug_flags{idbg});
         work_dir = fullfile(common, pdstr(precisions{iprc}, debug_flags{idbg}));
@@ -109,7 +151,7 @@ for isol = 1 : length(solvers)
                 % The support for the classical variant is limited. No debugging version.
                 continue
             end
-            mex_options = {verbose_option, ['-', dbgstr(debug_flags{idbg})]};
+            mex_options = [common_mex_options, {['-', dbgstr(debug_flags{idbg})]}];
             for iprc = 1 : length(precisions)
                 work_dir = fullfile(soldir, pdstr(precisions{iprc}, debug_flags{idbg}));
                 prepare_work_dir(work_dir);
