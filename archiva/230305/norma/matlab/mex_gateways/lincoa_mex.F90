@@ -1,20 +1,51 @@
 !--------------------------------------------------------------------------------------------------!
 ! The MEX gateway for LINCOA
+! This is an adapted MEX gateway to circumvent the MATLAB R2025a bug that it segfaults on Linux
+! if the Fortran MEX function contains an internal procedure that is passed as an actual argument.
+! This MEX uses a module variable FUN_PTR to store the function handle, which is essentially a
+! global variable and is not thread-safe or recursion-safe.
+! See MathWorks Technical Support Case 07931486 and
+! https://www.mathworks.com/matlabcentral/answers/2178414-bug-matlab-2025a-segfaults-on-ubuntu-when-handling-fortran-mex-files-with-internal-subroutines
+! https://stackoverflow.com/questions/79699706/matlab-2025a-vs-fortran-mex-files-with-internal-subroutines
+! https://fortran-lang.discourse.group/t/implementation-of-a-parametrized-objective-function-without-using-module-variables-or-internal-subroutines
+! https://stackoverflow.com/questions/79705107/fortran-implementating-a-parametrized-objective-function-without-using-module-v
 !
 ! Authors:
 !   Tom M. RAGONNEAU (tom.ragonneau@connect.polyu.hk)
 !   and Zaikun ZHANG (zaikun.zhang@polyu.edu.hk)
-!   Department of Applied Mathematics,
+!   Department of Applied Mathematics, 
 !   The Hong Kong Polytechnic University
 !
 ! Dedicated to late Professor M. J. D. Powell FRS (1936--2015)
 !
 ! Started in July 2020
 !
-! Last Modified: Tuesday, November 15, 2022 PM02:41:18
+! Last Modified: Fri 25 Jul 2025 09:31:52 PM PDT
 !--------------------------------------------------------------------------------------------------!
 
 #include "fintrf.h"
+
+
+module calfun_mod
+implicit none
+private
+public :: fun_ptr, calfun
+
+mwPointer :: fun_ptr  ! Pointer to the objective function handle
+
+contains
+
+subroutine calfun(x, f)
+use, non_intrinsic :: cbfun_mod, only : evalcb
+use, non_intrinsic :: consts_mod, only : RP
+implicit none
+real(RP), intent(in) :: x(:)
+real(RP), intent(out) :: f
+call evalcb(fun_ptr, x, f)
+end subroutine calfun
+
+end module calfun_mod
+
 
 subroutine mexFunction(nargout, poutput, nargin, pinput)
 !--------------------------------------------------------------------------------------------------!
@@ -35,6 +66,7 @@ use, non_intrinsic :: fmxapi_mod, only : fmxVerifyClassShape
 use, non_intrinsic :: fmxapi_mod, only : fmxReadMPtr, fmxWriteMPtr
 
 ! Solver-specific modules
+use, non_intrinsic :: calfun_mod, only : fun_ptr, calfun
 use, non_intrinsic :: lincoa_mod, only : lincoa
 
 implicit none
@@ -53,7 +85,6 @@ integer(IK) :: maxhist
 integer(IK) :: nf
 integer(IK) :: npt
 logical :: output_xhist
-mwPointer :: fun_ptr
 real(RP) :: cstrv
 real(RP) :: ctol
 real(RP) :: cweight
@@ -104,12 +135,12 @@ call fmxReadMPtr(pinput(19), maxfilt)
 ! There are different cases because XHIST may or may not be passed to the Fortran code.
 if (output_xhist) then
     call lincoa(calfun, x, f, cstrv, A, b, nf, rhobeg, rhoend, ftarget, ctol, cweight, maxfun, npt, &
-        & iprint, eta1, eta2, gamma1, gamma2, xhist=xhist, fhist=fhist, chist=chist, maxhist=maxhist, &
-        & maxfilt=maxfilt, info=info)
+        & iprint, eta1, eta2, gamma1, gamma2, xhist = xhist, fhist = fhist, chist = chist, maxhist = maxhist, &
+        & maxfilt = maxfilt, info = info)
 else
     call lincoa(calfun, x, f, cstrv, A, b, nf, rhobeg, rhoend, ftarget, ctol, cweight, maxfun, npt, &
-        & iprint, eta1, eta2, gamma1, gamma2, fhist=fhist, chist=chist, maxhist=maxhist, &
-        & maxfilt=maxfilt, info=info)
+        & iprint, eta1, eta2, gamma1, gamma2, fhist = fhist, chist = chist, maxhist = maxhist, &
+        & maxfilt = maxfilt, info = info)
 end if
 
 ! After the Fortran code, XHIST may not be allocated, because it may not have been passed to the
@@ -133,27 +164,11 @@ call fmxWriteMPtr(chist(1:min(int(nf), size(chist))), poutput(8), 'row')
 ! limit in the Fortran code. Similar for CHIST.
 
 ! Free memory. Indeed, automatic deallocation would take place.
-deallocate (x) ! Allocated by fmxReadMPtr.
-deallocate (A) ! Allocated by fmxReadMPtr.
-deallocate (b) ! Allocated by fmxReadMPtr.
+deallocate (x)  ! Allocated by fmxReadMPtr.
+deallocate (A)  ! Allocated by fmxReadMPtr.
+deallocate (b)  ! Allocated by fmxReadMPtr.
 deallocate (xhist)  ! Allocated by the solver
 deallocate (fhist)  ! Allocated by the solver
 deallocate (chist)  ! Allocated by the solver
 
-!--------------------------------------------------------------------!
-contains
-
-subroutine calfun(x_sub, f_sub)
-! This is an internal procedure that defines CALFUN. Since F2008, we
-! can pass internal procedures as actual arguments. See Note 12.18
-! on page 290 of WD 1539-1 J3/10-007r1 (F2008 Working Document).
-! We implement CALFUN internally so that FUN_PTR is visible to it.
-! Do NOT pass FUN_PTR by a module variable, which is thread-unsafe.
-use, non_intrinsic :: cbfun_mod, only : evalcb
-implicit none
-real(RP), intent(in) :: x_sub(:)
-real(RP), intent(out) :: f_sub
-call evalcb(fun_ptr, x_sub, f_sub)
-end subroutine calfun
-!--------------------------------------------------------------------!
 end subroutine mexFunction

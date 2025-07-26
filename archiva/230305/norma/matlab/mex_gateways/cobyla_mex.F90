@@ -1,20 +1,52 @@
 !--------------------------------------------------------------------------------------------------!
 ! The MEX gateway for COBYLA
+! This is an adapted MEX gateway to circumvent the MATLAB R2025a bug that it segfaults on Linux
+! if the Fortran MEX function contains an internal procedure that is passed as an actual argument.
+! This MEX uses a module variable FUN_PTR to store the function handle, which is essentially a
+! global variable and is not thread-safe or recursion-safe.
+! See MathWorks Technical Support Case 07931486 and
+! https://www.mathworks.com/matlabcentral/answers/2178414-bug-matlab-2025a-segfaults-on-ubuntu-when-handling-fortran-mex-files-with-internal-subroutines
+! https://stackoverflow.com/questions/79699706/matlab-2025a-vs-fortran-mex-files-with-internal-subroutines
+! https://fortran-lang.discourse.group/t/implementation-of-a-parametrized-objective-function-without-using-module-variables-or-internal-subroutines
+! https://stackoverflow.com/questions/79705107/fortran-implementating-a-parametrized-objective-function-without-using-module-v
 !
 ! Authors:
 !   Tom M. RAGONNEAU (tom.ragonneau@connect.polyu.hk)
 !   and Zaikun ZHANG (zaikun.zhang@polyu.edu.hk)
-!   Department of Applied Mathematics,
+!   Department of Applied Mathematics, 
 !   The Hong Kong Polytechnic University
 !
 ! Dedicated to late Professor M. J. D. Powell FRS (1936--2015)
 !
 ! Started in July 2020
 !
-! Last Modified: Saturday, February 12, 2022 PM02:33:40
+! Last Modified: Fri 25 Jul 2025 09:27:59 PM PDT
 !--------------------------------------------------------------------------------------------------!
 
 #include "fintrf.h"
+
+
+module calcfc_mod
+implicit none
+private
+public :: funcon_ptr, calcfc
+
+mwPointer :: funcon_ptr  ! Pointer to the objective/constraint function handle
+
+contains
+
+subroutine calcfc(x, f, nlconstr)
+use, non_intrinsic :: cbfun_mod, only : evalcb
+use, non_intrinsic :: consts_mod, only : RP
+implicit none
+real(RP), intent(in) :: x(:)
+real(RP), intent(out) :: f
+real(RP), intent(out) :: nlconstr(:)
+call evalcb(funcon_ptr, x, f, nlconstr)
+end subroutine calcfc
+
+end module calcfc_mod
+
 
 subroutine mexFunction(nargout, poutput, nargin, pinput)
 !--------------------------------------------------------------------------------------------------!
@@ -35,6 +67,7 @@ use, non_intrinsic :: fmxapi_mod, only : fmxVerifyClassShape
 use, non_intrinsic :: fmxapi_mod, only : fmxReadMPtr, fmxWriteMPtr
 
 ! Solver-specific modules
+use, non_intrinsic :: calcfc_mod, only : funcon_ptr, calcfc
 use, non_intrinsic :: cobyla_mod, only : cobyla
 
 implicit none
@@ -58,7 +91,6 @@ integer(IK) :: maxhist
 integer(IK) :: nf
 logical :: output_conhist
 logical :: output_xhist
-mwPointer :: funcon_ptr
 real(RP) :: cstrv
 real(RP) :: ctol
 real(RP) :: cweight
@@ -111,20 +143,20 @@ m = int(size(constr0), kind(m))  ! M is a compulsory input of the Fortran code.
 if (output_xhist .and. output_conhist) then
     call cobyla(calcfc, m, x, f, cstrv, constr, f0, constr0, nf, rhobeg, rhoend, ftarget, ctol, &
         & cweight, maxfun, iprint, eta1, eta2, gamma1, gamma2, &
-        & xhist=xhist, fhist=fhist, chist=chist, conhist=conhist, maxhist=maxhist, &
-        & maxfilt=maxfilt, info=info)
+        & xhist = xhist, fhist = fhist, chist = chist, conhist = conhist, maxhist = maxhist, &
+        & maxfilt = maxfilt, info = info)
 elseif (output_xhist) then
     call cobyla(calcfc, m, x, f, cstrv, constr, f0, constr0, nf, rhobeg, rhoend, ftarget, ctol, &
         & cweight, maxfun, iprint, eta1, eta2, gamma1, gamma2, &
-        & xhist=xhist, fhist=fhist, chist=chist, maxhist=maxhist, maxfilt=maxfilt, info=info)
+        & xhist = xhist, fhist = fhist, chist = chist, maxhist = maxhist, maxfilt = maxfilt, info = info)
 elseif (output_conhist) then
     call cobyla(calcfc, m, x, f, cstrv, constr, f0, constr0, nf, rhobeg, rhoend, ftarget, ctol, &
         & cweight, maxfun, iprint, eta1, eta2, gamma1, gamma2, &
-        & fhist=fhist, chist=chist, conhist=conhist, maxhist=maxhist, maxfilt=maxfilt, info=info)
+        & fhist = fhist, chist = chist, conhist = conhist, maxhist = maxhist, maxfilt = maxfilt, info = info)
 else
     call cobyla(calcfc, m, x, f, cstrv, constr, f0, constr0, nf, rhobeg, rhoend, ftarget, ctol, &
         & cweight, maxfun, iprint, eta1, eta2, gamma1, gamma2, &
-        & fhist=fhist, chist=chist, maxhist=maxhist, maxfilt=maxfilt, info=info)
+        & fhist = fhist, chist = chist, maxhist = maxhist, maxfilt = maxfilt, info = info)
 end if
 
 ! After the Fortran code, XHIST or CONHIST may not be allocated, because it may not have been passed
@@ -153,7 +185,7 @@ call fmxWriteMPtr(conhist(:, 1:min(int(nf), size(conhist, 2))), poutput(10))
 ! limit in the Fortran code. Similar for CHIST and CONHIST.
 
 ! Free memory. Indeed, automatic deallocation would take place.
-deallocate (x) ! Allocated by fmxReadMPtr.
+deallocate (x)  ! Allocated by fmxReadMPtr.
 deallocate (constr0)  ! Allocated by fmxReadMPtr.
 deallocate (constr)  ! Allocated by the solver
 deallocate (xhist)  ! Allocated by the solver
@@ -161,21 +193,4 @@ deallocate (fhist)  ! Allocated by the solver
 deallocate (chist)  ! Allocated by the solver
 deallocate (conhist)  ! Allocated by the solver
 
-!--------------------------------------------------------------------!
-contains
-
-subroutine calcfc(x_sub, f_sub, constr_sub)
-! This is an internal procedure that defines CALCFC. Since F2008, we
-! can pass internal procedures as actual arguments. See Note 12.18
-! on page 290 of WD 1539-1 J3/10-007r1 (F2008 Working Document).
-! We implement CALCFC internally so that FUNCON_PTR is visible to it.
-! Do NOT pass FUNCON_PTR by a module variable, which is thread-unsafe.
-use, non_intrinsic :: cbfun_mod, only : evalcb
-implicit none
-real(RP), intent(in) :: x_sub(:)
-real(RP), intent(out) :: f_sub
-real(RP), intent(out) :: constr_sub(:)
-call evalcb(funcon_ptr, x_sub, f_sub, constr_sub)
-end subroutine calcfc
-!--------------------------------------------------------------------!
 end subroutine mexFunction
