@@ -11,4 +11,3 @@ Latin word for "archives".
 Mirrors:
 - Gitee: https://gitee.com/libprima/prima_development
 - GitHub: https://github.com/libprima/prima_development
-- GitLab: https://gitlab.com/libprima/prima_development
