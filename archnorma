@@ -114,10 +114,18 @@ printf "\nModifying compile.m for the new norma version ...\n"
 COMPILEM="$NORMA"/matlab/setup_tools/compile.m
 OLDSTR="solver = solvers{isol}"
 NEWSTR="solver = regexprep(solvers{isol}, '_norma', '')"
-sed -i "s|$OLDSTR|$NEWSTR|" "$COMPILEM"
+sed -i "s|$OLDSTR|$NEWSTR|g" "$COMPILEM"
 OLDSTR="get_mexname(solver"
 NEWSTR="get_mexname(solvers{isol}"
-sed -i "s|$OLDSTR|$NEWSTR|" "$COMPILEM"
+sed -i "s|$OLDSTR|$NEWSTR|g" "$COMPILEM"
+# The following two lines are needed because of the code in compile.m that circumvents the bug of
+# MATLAB R2025a MEX concerning Fortran internal procedures. The code in compile.m should replace
+# fortran/cobyla/cobyla.f90 with matlab/mex_gateways/R2025a/cobyla.f90. However, after the above
+# modifications, compile.m would be replacing fortran/cobyla_norma/cobyla_norma.f90 with
+# matlab/mex_gateways/R2025a/cobyla_norma.f90, the names being incorrect.
+OLDSTR="cobyla_norma"
+NEWSTR="cobyla"
+sed -i "s|$OLDSTR|$NEWSTR|g" "$COMPILEM"
 printf "Done.\n"
 
 printf "\nSuccess.\n\n"
