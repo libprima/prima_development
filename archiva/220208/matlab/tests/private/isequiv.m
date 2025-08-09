@@ -118,6 +118,7 @@ if isempty(requirements.list)
         blacklist = [blacklist, {'CHEBYQAD', 'HS54'}]; % The classical lincoa encounters segfault
         blacklist = [blacklist, {'ARGTRIGLS', 'BROWNAL', 'PENALTY3', 'VARDIM'}]; % More than 10 minutes to solve.
         blacklist = [blacklist, {' QPNBOEI2', 'QPCBOEI2', 'SIM2BQP', 'BQP1VAR', 'LUKSAN22LS', 'LUKSAN21LS', 'MINSURF', 'QPCBLEND', 'LSQFIT', 'CVXQP1'}]; % Too long to solve
+        blacklist = [blacklist, {'DEGENQP'}];
     case {'cobyla', 'cobylan'}
         blacklist = [blacklist, {'HS80', 'HS77', 'OSBORNE1'}];  % QRADD_RDIAG: Assertion failed: C^T*Q(:, N) == Rdiag(N).
         blacklist = [blacklist, {'PALMER4ANE', 'PALMER5BNE'}];
