@@ -120,9 +120,12 @@ NEWSTR="get_mexname(solvers{isol}"
 sed -i "s|$OLDSTR|$NEWSTR|g" "$COMPILEM"
 # The following two lines are needed because of the code in compile.m that circumvents the bug of
 # MATLAB R2025a MEX concerning Fortran internal procedures. The code in compile.m should replace
-# fortran/cobyla/cobyla.f90 with matlab/mex_gateways/R2025a/cobyla.f90. However, after the above
-# modifications, compile.m would be replacing fortran/cobyla_norma/cobyla_norma.f90 with
-# matlab/mex_gateways/R2025a/cobyla_norma.f90, the names being incorrect.
+# fortran/cobyla/cobylb.f90 with matlab/mex_gateways/R2025a/cobylb.f90 (up until git commit a68377d)
+# and fortran/classical/cobyla/classical_cobyla.f90 with matlab/mex_gateways/R2025a/cobyla.f90. However,
+# after the above modifications, compile.m would be replacing fortran/cobyla_norma/cobyla_norma.f90
+# with matlab/mex_gateways/R2025a/cobyla_norma.f90 and
+# fortran/classical/cobyla_norma/classical_cobyla_norma.f90
+# with matlab/mex_gateways/R2025a/cobyla_norma.f90, the names being incorrect.
 OLDSTR="cobyla_norma"
 NEWSTR="cobyla"
 sed -i "s|$OLDSTR|$NEWSTR|g" "$COMPILEM"
