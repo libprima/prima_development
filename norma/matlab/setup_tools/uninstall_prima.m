@@ -25,7 +25,7 @@ warning(orig_warning_state); % Restore the behavior of displaying warnings
 user_startup = fullfile(userpath,'startup.m');
 if exist(user_startup, 'file')
     add_path_string = sprintf('addpath(''%s'');', interfaces);
-    full_add_path_string = sprintf('%s\t%s %s', add_path_string, '%', path_string_stamp);
+    full_add_path_string = sprintf('%s %s %s', add_path_string, '%', path_string_stamp);
     try
         del_str_ln(user_startup, full_add_path_string);
     catch
