@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, December 13, 2022 AM10:06:56
+! Last Modified: Sun 07 Sep 2025 08:53:40 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -581,6 +581,14 @@ if (den_cauchy(knew) > max(den_line(knew), ZERO) .or. is_nan(den_line(knew))) th
     d = s
 end if
 
+! In case D is zero or contains Inf/NaN, replace it with a displacement from XPT(:, KNEW) to
+! XOPT. Powell's code does not have this.
+if (sum(abs(d)) <= 0 .or. .not. is_finite(sum(abs(d)))) then
+    d = xpt(:, knew) - xopt
+    scaling = delbar / norm(d)
+    d = min(HALF, scaling) * d
+end if
+
 !====================!
 !  Calculation ends  !
 !====================!
@@ -589,6 +597,11 @@ end if
 if (DEBUGGING) then
     call assert(size(d) == n, 'SIZE(D) == N', srname)
     call assert(all(is_finite(d)), 'D is finite', srname)
+    ! if (.not. (norm(d) > 0 .and. norm(d) < TWO * delbar)) then
+    !     write(16,*) 'd = ', d, 'norm(d) = ', norm(d), 'delbar = ', delbar, 'TWO*DELBAR = ', TWO*delbar
+    !     close(16)
+    !     stop
+    ! endif
     ! In theory, |D| <= DELBAR, which may be false due to rounding, but |D| >= 2*DELBAR is unlikely.
     ! It is crucial to ensure that the geometry step is nonzero, which holds in theory. However, due
     ! to the bound constraints, |D| may be much smaller than DELBAR.

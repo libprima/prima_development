@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Thursday, December 01, 2022 PM04:33:16
+! Last Modified: Sun 07 Sep 2025 08:53:26 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -572,6 +572,14 @@ den_cauchy = calden(kopt, bmat, s, xpt, zmat)
 !IF (VLAGSQ_CAUCHY > MAX(DEN_LINE(KNEW), ZERO) .OR. IS_NAN(DEN_LINE(KNEW))) THEN  ! Powell's version
 if (den_cauchy(knew) > max(den_line(knew), ZERO) .or. is_nan(den_line(knew))) then  ! Works better
     d = s
+end if
+
+! In case D is zero or contains Inf/NaN, replace it with a displacement from XPT(:, KNEW) to
+! XOPT. Powell's code does not have this.
+if (sum(abs(d)) <= 0 .or. .not. is_finite(sum(abs(d)))) then
+    d = xpt(:, knew) - xopt
+    scaling = delbar / norm(d)
+    d = min(HALF, scaling) * d
 end if
 
 !====================!

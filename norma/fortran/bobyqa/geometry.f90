@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, March 12, 2024 PM07:52:53
+! Last Modified: Sun 07 Sep 2025 10:44:35 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -589,7 +589,8 @@ end if
 if (.not. (sum(abs(d)) > 0 .and. is_finite(sum(abs(d))))) then
     d = xpt(:, knew) - xopt
     scaling = delbar / norm(d)
-    d = max(0.6_RP * scaling, min(HALF, scaling)) * d
+    !d = max(0.6_RP * scaling, min(HALF, scaling)) * d
+    d = min(HALF, delbar / norm(d)) * d  ! Since XPT respects the bounds, so does XOPT + D.
 end if
 
 !====================!
