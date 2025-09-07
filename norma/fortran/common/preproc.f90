@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Sunday, March 24, 2024 AM02:28:37
+! Last Modified: Mon 08 Sep 2025 02:12:20 AM CST
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -146,7 +146,8 @@ if (maxfun < min_maxfun) then
     else  ! We assume that non-positive values of MAXFUN are produced by overflow.
 !        maxfun = huge(maxfun)
         !maxfun = huge(maxfun) - 1
-        maxfun = (huge(maxfun) - 1) / 2
+        !maxfun = (huge(maxfun) - 1) / 2
+        maxfun = 10_IK**min(range(maxfun), 5)  !!MATLAB: maxfun =  10^5;
     end if
     call warning(solver, 'Invalid MAXFUN; it should be at least '//min_maxfun_str//'; it is set to '//num2str(maxfun))
 end if
@@ -364,7 +365,7 @@ if (present(honour_x0)) then
         end if
     end if
 
-    rhobeg_old = rhobeg; 
+    rhobeg_old = rhobeg;
     lbx = (is_finite(xl) .and. x0 - xl <= EPS * max(ONE, abs(xl))) ! X0 essentially equals XL
     ubx = (is_finite(xu) .and. x0 - xu >= -EPS * max(ONE, abs(xu))) ! X0 essentially equals XU
     x0(trueloc(lbx)) = xl(trueloc(lbx))
