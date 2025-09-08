@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, April 05, 2024 AM09:50:36
+! Last Modified: Mon 08 Sep 2025 09:04:09 AM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -272,7 +272,7 @@ do tr = 1, maxtr
             f = fval(minloc(distsq, dim=1))
         else
             call evaluate(calfun, x, f)
-            nf = nf + 1
+            nf = nf + 1_IK
             ! Save X, F into the history.
             call savehist(nf, x, xhist, f, fhist)
         end if
@@ -443,7 +443,7 @@ do tr = 1, maxtr
             f = fval(minloc(distsq, dim=1))
         else
             call evaluate(calfun, x, f)
-            nf = nf + 1
+            nf = nf + 1_IK
             ! Save X, F into the history.
             call savehist(nf, x, xhist, f, fhist)
         end if
