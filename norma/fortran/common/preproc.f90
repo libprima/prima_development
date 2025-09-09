@@ -6,7 +6,7 @@ module preproc_mod
 !
 ! Started: July 2020
 !
-! Last Modified: Mon 08 Sep 2025 02:12:20 AM CST
+! Last Modified: Tue 09 Sep 2025 08:31:16 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 ! N.B.: If all the inputs are valid, then PREPROC should do nothing.
@@ -147,7 +147,7 @@ if (maxfun < min_maxfun) then
 !        maxfun = huge(maxfun)
         !maxfun = huge(maxfun) - 1
         !maxfun = (huge(maxfun) - 1) / 2
-        maxfun = 10_IK**min(range(maxfun), 5)  !!MATLAB: maxfun =  10^5;
+        maxfun = max(min_maxfun, 10_IK**min(range(maxfun), 5))  !!MATLAB: maxfun =  10^5;
     end if
     call warning(solver, 'Invalid MAXFUN; it should be at least '//min_maxfun_str//'; it is set to '//num2str(maxfun))
 end if
