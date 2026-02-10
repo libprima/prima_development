@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Tuesday, March 12, 2024 PM09:53:11
+! Last Modified: Tue 10 Feb 2026 02:09:55 PM CET
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -354,7 +354,8 @@ gnorm = sqrt(gg)
 
 if (.not. (gnorm * dd > 0.5E-2_RP * delbar * abs(dhd) .and. vv > 1.0E-4_RP * dd)) then
     ! It may happen that D = 0 due to overflow in DD, which is used to define SCALING.
-    if (sum(abs(d)) <= 0 .or. is_nan(sum(abs(d)))) then
+    !if (sum(abs(d)) <= 0 .or. is_nan(sum(abs(d)))) then
+    if (sum(abs(d)) <= 0 .or. .not. is_finite(sum(abs(d)))) then
         d = dcauchy
     end if
     return
