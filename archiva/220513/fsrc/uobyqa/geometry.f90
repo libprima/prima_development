@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, May 06, 2022 PM09:41:35
+! Last Modified: Mon 06 Apr 2026 10:12:25 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -78,6 +78,7 @@ end if
 !     Preliminary calculations.
 !
 
+!write(16,*) 'G = ', g(1:n), 'H = ', h(1:n, 1:n), 'RHO = ', rho
 
 if (is_nan(sum(abs(h)) + sum(abs(g)))) then
     d = ZERO
@@ -106,6 +107,8 @@ if (vhv * vhv <= 0.9999_RP * sum(d**2) * vv) then
     temp = temp + sign(sqrt(temp**2 + vhd**2), dhd + vhv)
     d = vhd * v + temp * d
 end if
+
+!write(16,*) 'D = ', d(1:n), 'V = ', v(1:n), 'VHV = ', vhv, 'WHW = ', dhd, 'VHW = ', vhd
 
 ! We now turn our attention to the subspace span{G, D}. A multiple of the current D is returned if
 ! that choice seems to be adequate.
@@ -159,6 +162,8 @@ tempc = wcos / vnorm
 tempd = wsin / gnorm
 d = tempa * g + tempb * v
 v = tempc * v - tempd * g
+
+!write(16,*) 'D = ', d(1:n), 'V = ', v(1:n), 'GHG = ', ghg, 'VHG = ', vhg, 'VHV = ', vhv
 
 ! The final D is a multiple of the current D, V, D + V or D - V. We make the choice from these
 ! possibilities that is optimal.

@@ -13,7 +13,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, May 15, 2022 PM12:13:44
+! !Last Modified: Mon 06 Apr 2026 10:30:02 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -96,7 +96,7 @@ real(RP) :: ddknew, delta, diff, distsq(size(pl, 1)), weight(size(pl, 1)), score
 &        fsave, ratio, rho, rhosq, sixthm, summ, &
 &        temp, tempa, tol, vmax,  &
 &        qred, wmult, plknew((size(x) + 1) * (size(x) + 2) / 2 - 1)
-integer(IK) :: ih, ip, iq, iw, j, k, knew, kopt, ksave
+integer(IK) :: ih, ip, iq, iw, i,j, k, knew, kopt, ksave
 logical :: tr_success, shortd
 
 ! Sizes.
@@ -194,6 +194,7 @@ do nf = 1, 2_IK * n + 1_IK
         goto 420
     end if
     call evaluate(calfun, x, f)
+!write(16,*) nf, f, x
     call savehist(nf, x, xhist, f, fhist)
     if (is_nan(f) .or. is_posinf(f)) then
         if (nf == 1) then
@@ -279,6 +280,7 @@ do nf = 2_IK * n + 2_IK, npt
     end if
 
     call evaluate(calfun, x, f)
+!write(16,*) nf, f, x
     call savehist(nf, x, xhist, f, fhist)
     if (is_nan(f) .or. is_posinf(f)) then
         info = NAN_INF_F
@@ -356,7 +358,7 @@ end if
 !write (16, *) 'Hess', h
 
 call trstep(delta, g, h, tol, d, crvmin)
-!write (16, *) 'd', d, crvmin
+write (16, *) 'tr', crvmin, d
 
 dnorm = min(delta, sqrt(sum(d**2)))
 errtol = -ONE
@@ -396,6 +398,7 @@ end if
 !------------------------------------------------------------------------!
 call evaluate(calfun, x, f)
 nf = nf + 1
+!write(16,*) nf, f, x
 call savehist(nf, x, xhist, f, fhist)
 !------------------------------------------------------------------------!
 
@@ -480,9 +483,28 @@ if (knew <= 0) then
 !
 !     Set KNEW to the index of the next interpolation point to be deleted.
 !
-    distsq = sum((xpt - spread(xopt, dim=2, ncopies=npt))**2, dim=1)
-    weight = max(ONE, distsq / rho**2)**1.5_RP
-    score = weight * abs(vlag)
+    !distsq = sum((xpt - spread(xopt, dim=2, ncopies=npt))**2, dim=1)
+    !weight = max(ONE, distsq / rho**2)**1.5_RP
+    !score = weight * abs(vlag)
+
+    distsq = 0.0_RP
+    do i =  1, n
+        distsq = distsq + (xpt(i, :) - xopt(i))**2
+    end do
+!write(16,*) f, fsave, kopt
+!write(16,*) 'vlag', vlag(1:npt)
+
+    do k = 1, npt
+      summ = ZERO
+      do i = 1, n
+          summ = summ + (xpt(i, k) - xopt(i))**2
+      end do
+      temp = abs(vlag(k))
+      temp = temp * max(ONE, summ / rho**2)**1.5_RP
+      score(k) = temp
+!write(16,*) 'weight', max(ONE, summ / rho**2)**1.5_RP, summ / rho**2
+!write(16,*) 'score', score(k)!, vlag(k), summ / rho**2
+    end do
 
     tr_success = (f < fsave)
 
@@ -510,7 +532,10 @@ if (knew <= 0) goto 290
 !     and also update the Lagrange functions and the quadratic model.
 !
 
+!write(16,*) 'knew', knew, xnew
+!write(16,*) 'xpt', xpt
 xpt(:, knew) = xnew
+!write(16,*) 'xpt', xpt
 ! It can happen that VLAG(KNEW) = 0 due to rounding.
 !write (16, *) 'pqb', pq(1:npt - 1)
 !write (16, *) 'vlag', vlag(1:npt)
@@ -540,6 +565,8 @@ if (f < fsave .or. ksave > 0 .or. dnorm > TWO * rho .or. ddknew > 4.0_RP * rho**
 290 continue
 
 distsq = sum((xpt - spread(xopt, dim=2, ncopies=npt))**2, dim=1)  ! DISTSQ is updated during the loop.
+!write(16,*) 'xpt', xpt(1:n, 1:npt)
+!write(16,*) 'xopt', xopt(1:n)
 ! The loop counter K does not appear in the loop body. Its purpose is only to impose an upper bound on the maximal number of loops.
 do k = 1, npt
     knew = -1  ! Still needed?
@@ -551,6 +578,8 @@ do k = 1, npt
     ! function at the centre of the trust region.
     knew = int(maxloc(distsq, dim=1), IK)
     !!MATLAB: [~, knew] = max(distsq(1:npt));
+!write(16,*) knew, distsq
+!write(16,*) 'pl', pl(1:npt, 1:npt - 1), 'xopt', xopt(1:n)
     g = pl(knew, 1:n) + smat_mul_vec(pl(knew, n + 1:npt - 1), xopt)
     h = vec2smat(pl(knew, n + 1:npt - 1))
     if (is_nan(sum(abs(g)) + sum(abs(h)))) then
@@ -570,6 +599,7 @@ do k = 1, npt
     ! If the KNEW-th point may be replaced, then pick a D that gives a large value of the modulus of
     ! its Lagrange function within the trust region.
     call geostep(g, h, rho, d, vmax)
+!write(16,*) 'geo', vmax, d
     if (errtol > 0 .and. wmult * vmax <= errtol) then
         cycle
     elseif (vmax > 0) then

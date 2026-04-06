@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Sunday, May 15, 2022 PM12:14:02
+! Last Modified: Mon 06 Apr 2026 10:11:40 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -311,7 +311,7 @@ end do
 call trstep(n, g, h, delta, tol, d(1:n), w(1), w(n + 1), w(2 * n + 2), w(3 * n + 3), &
 & w(4 * n + 4), w(5 * n + 5), evalue)
 !trstep(n, g, h, delta, tol, d, gg, td, tn, w, piv, z, evalue)
-!write (17, *) 'd', d(1:n), evalue
+write (17, *) 'tr', evalue, d(1:n)
 temp = ZERO
 do i = 1, n
     temp = temp + d(i)**2
@@ -356,6 +356,7 @@ end do
 !------------------------------------------------------------------------!
 call evaluate(calfun, x, f)
 nf = nf + 1
+!write(17,*) nf, f, x
 call savehist(nf, x, xhist, f, fhist)
 !------------------------------------------------------------------------!
 
@@ -475,6 +476,8 @@ if (f >= fsave) then
     ktemp = kopt
     detrat = ONE
 end if
+!write(17,*) f, fsave, kopt
+!write(17, *) 'vlag', vlag(1:npt)
 do k = 1, npt
     summ = ZERO
     do i = 1, n
@@ -483,6 +486,8 @@ do k = 1, npt
     temp = abs(vlag(k))
     !if (summ > rhosq) temp = temp * (summ / rhosq)**1.5_RP
     temp = temp * max(ONE, summ / rhosq)**1.5_RP
+!write(17,*) 'weight', max(ONE, summ / rhosq)**1.5_RP, summ/rhosq
+!write(17,*) 'score', temp
     if (temp > detrat .and. k /= ktemp) then
         detrat = temp
         ddknew = summ
@@ -492,6 +497,7 @@ end do
 
 !-----------------------------------------------------------------------------------------------!
 distsq = sum((xpt - spread(xopt, dim=2, ncopies=npt))**2, dim=1)
+!write(17,*) distsq
 if (knew == 0 .and. f < fsave) then
     knew = int(maxloc(distsq, dim=1), IK)
 end if
@@ -502,9 +508,12 @@ if (knew == 0) goto 290
 !     Replace the interpolation point that has index KNEW by the point XNEW,
 !     and also update the Lagrange functions and the quadratic model.
 !
+!write(17,*) 'knew', knew, xnew
+!write(17,*) 'xpt', xpt(1:n,1:npt)
 240 do i = 1, n
     xpt(i, knew) = xnew(i)
 end do
+!write(17,*) 'xpt', xpt(1:n,1:npt)
 temp = ONE / vlag(knew)
 !write (17, *) 'pqb', pq(1:npt - 1)
 !write (17, *) 'vlag', vlag(1:npt)
@@ -549,6 +558,8 @@ if (ddknew > tworsq) goto 70
 end do
 310 knew = -1
 distest = tworsq
+!write(17,*) 'xpt', xpt(1:n, 1:npt)
+!write(17,*) 'xopt', xopt(1:n)
 do k = 1, npt
     if (w(k) > distest) then
         knew = k
@@ -561,6 +572,8 @@ end do
 !     HALF the summ of squares of compONEnts of the Hessian.
 !
 if (knew > 0) then
+!write(17,*) knew, w(1:npt)
+!write(17,*) 'pl', pl(1:npt, 1:npt - 1), 'xopt', xopt(1:n)
     ih = n
     sumh = ZERO
     do j = 1, n
@@ -625,6 +638,7 @@ if (knew > 0) then
 !     Here the vector XNEW is used as temporary working space.
 !
     call geostep(n, g, h, rho, d(1:n), xnew, vmax)
+!write(17,*) 'geo', vmax, d(1:n)
     if (errtol > ZERO) then
         if (wmult * vmax <= errtol) goto 310
     end if

@@ -8,7 +8,7 @@ module geometry_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Friday, May 06, 2022 PM08:54:55
+! Last Modified: Mon 06 Apr 2026 10:11:57 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -64,6 +64,8 @@ integer(IK) :: i, j, k
 !
 !     Preliminary calculations.
 !
+
+!write(17,*) 'G = ', g(1:n), 'H = ', h(1:n, 1:n), 'RHO = ', rho
 
 halfrt = sqrt(HALF)
 
@@ -137,6 +139,9 @@ if (vhv * vhv <= 0.9999_RP * dsq * vsq) then
         d(i) = vhw * v(i) + temp * d(i)
     end do
 end if
+
+!write(17,*) 'D = ', d(1:n), 'V = ', v(1:n), 'VHV = ', vhv, 'WHW = ', whw, 'VHW = ', vhw
+
 !
 !     We now turn our attention to the subspace spanned by G and D. A multiple
 !     of the current D is returned if that choice seems to be adequate.
@@ -221,6 +226,9 @@ do i = 1, n
     d(i) = tempa * g(i) + tempb * v(i)
     v(i) = tempc * v(i) - tempd * g(i)
 end do
+
+!write(17,*) 'D = ', d(1:n), 'V = ', v(1:n), 'GHG = ', ghg, 'VHG = ', vhg, 'VHV = ', vhv
+
 !
 !     The final D is a multiple of the current D, V, D+V or D-V. We make the
 !     choice from these possibilities that is optimal.
