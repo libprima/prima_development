@@ -8,7 +8,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! Last Modified: Mon 06 Apr 2026 10:11:40 PM CST
+! Last Modified: Mon 06 Apr 2026 10:41:34 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -311,7 +311,7 @@ end do
 call trstep(n, g, h, delta, tol, d(1:n), w(1), w(n + 1), w(2 * n + 2), w(3 * n + 3), &
 & w(4 * n + 4), w(5 * n + 5), evalue)
 !trstep(n, g, h, delta, tol, d, gg, td, tn, w, piv, z, evalue)
-write (17, *) 'tr', evalue, d(1:n)
+!write (17, *) 'tr', evalue, d(1:n)
 temp = ZERO
 do i = 1, n
     temp = temp + d(i)**2

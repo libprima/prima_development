@@ -13,7 +13,7 @@ module uobyqb_mod
 !
 ! Started: February 2022
 !
-! !Last Modified: Mon 06 Apr 2026 10:30:02 PM CST
+! !Last Modified: Mon 06 Apr 2026 10:42:05 PM CST
 !--------------------------------------------------------------------------------------------------!
 
 implicit none
@@ -358,7 +358,7 @@ end if
 !write (16, *) 'Hess', h
 
 call trstep(delta, g, h, tol, d, crvmin)
-write (16, *) 'tr', crvmin, d
+!write (16, *) 'tr', crvmin, d
 
 dnorm = min(delta, sqrt(sum(d**2)))
 errtol = -ONE
